@@ -146,3 +146,19 @@ th { color: #8b949e; }
 .detailed-schedule th {
   color: #8b949e;
 }
+
+.detailed-schedule .phase-descent {
+  background: #1c2128;
+}
+
+.detailed-schedule .phase-bottom {
+  background: #22272e;
+}
+
+.detailed-schedule .phase-ascent {
+  background: inherit;
+}
+
+.detailed-schedule .phase-stop {
+  background: inherit;
+}

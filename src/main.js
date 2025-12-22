@@ -164,7 +164,8 @@ function renderRows(result) {
       depth = depth.replace(/ft/g, 'm');
       rate = rate.replace(/ft\/min/g, 'm/min');
     }
-    html += `<tr><td>${s.phase}</td><td>${depth}</td><td>${rate}</td><td>${s.time}</td><td>${s.accumulated}</td></tr>`;
+    const phaseClass = s.phase.toLowerCase().replace(/ /g, '-');
+    html += `<tr class="phase-${phaseClass}"><td>${s.phase}</td><td>${depth}</td><td>${rate}</td><td>${s.time}</td><td>${s.accumulated}</td></tr>`;
   });
   html += '</tbody></table>';
   scheduleDiv.innerHTML = html;
