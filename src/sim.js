@@ -113,6 +113,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
         he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
       }));
     }
+  }
 
   // Last stop at lastStopDepth
   if (lastStopDepth > 0) {
