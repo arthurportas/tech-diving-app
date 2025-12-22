@@ -121,3 +121,28 @@ th { color: #8b949e; }
   font-weight: bold;
   color: #e6edf3;
 }
+
+.detailed-schedule {
+  margin-top: 20px;
+}
+
+.detailed-schedule h4 {
+  color: #e6edf3;
+  margin-bottom: 10px;
+}
+
+.detailed-schedule table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.detailed-schedule th, .detailed-schedule td {
+  border-bottom: 1px solid #30363d;
+  padding: 6px;
+  text-align: left;
+}
+
+.detailed-schedule th {
+  color: #8b949e;
+}
