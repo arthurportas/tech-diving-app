@@ -9,6 +9,9 @@ const decoGasTypeSelect = document.getElementById('decoGasType');
 const eanO2Container = document.getElementById('eanO2Container');
 const out = document.getElementById('output');
 const btn = document.getElementById('planBtn');
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsPanel = document.getElementById('settingsPanel');
+const closeSettings = document.getElementById('closeSettings');
 
 function updateDecoUI() {
   const type = decoGasTypeSelect.value;
@@ -37,3 +40,21 @@ btn.addEventListener('click', () => {
   const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2 });
   renderRows(rows);
 });
+
+settingsBtn.addEventListener('click', () => {
+  settingsPanel.style.display = 'block';
+  setTimeout(() => settingsPanel.classList.add('open'), 10);
+});
+
+closeSettings.addEventListener('click', closeSettingsPanel);
+
+settingsPanel.addEventListener('click', (e) => {
+  if (e.target === settingsPanel) {
+    closeSettingsPanel();
+  }
+});
+
+function closeSettingsPanel() {
+  settingsPanel.classList.remove('open');
+  setTimeout(() => settingsPanel.style.display = 'none', 300);
+}
