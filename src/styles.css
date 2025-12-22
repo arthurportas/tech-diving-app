@@ -156,9 +156,11 @@ th { color: #8b949e; }
 }
 
 .detailed-schedule .ascent-group-0 {
-  background: #161b22;
+  background: #0d1117;
+  border-left: 3px solid #238636;
 }
 
 .detailed-schedule .ascent-group-1 {
-  background: #21262d;
+  background: #161b22;
+  border-left: 3px solid #1f6feb;
 }
