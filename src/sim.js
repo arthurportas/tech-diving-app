@@ -57,12 +57,12 @@ function ceilingDepth(tissues, depth, first, gfLow, gfHigh) {
 
 // computeDecompressionSchedule returns an array of rows { depth, mins, gas }
 export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoO2, useO2Shallow }) {
-  const decoGas = decoO2 === 100 ? 'O₂' : `EAN${decoO2}`;
-  const fullDecoGas = useO2Shallow ? `${decoGas} / O₂` : decoGas;
   const bottomGas = gasLabel === '18/45'
     ? { o2:0.18, he:0.45 }
     : gasLabel === '21/35'
     ? { o2:0.21, he:0.35 }
+    : gasLabel === 'o2'
+    ? { o2:1, he:0 }
     : { o2:0.21, he:0 };
 
   let tissues = initTissues();
@@ -92,7 +92,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
       // safety cap to avoid infinite loops
       if (mins > 1000) break;
     }
-    if (mins > 0) rows.push({ depth: d, mins, gas: fullDecoGas });
+    if (mins > 0) rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
   }
 
   return rows;
