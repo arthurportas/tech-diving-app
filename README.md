@@ -1,0 +1,26 @@
+# tech-diving-app
+
+Tiny static demo: a client-side Bühlmann ZH‑L16C decompression planner implemented entirely in `index.html`.
+
+Quick start
+
+- Open `index.html` directly in your browser for a fast smoke test.
+- To serve locally (recommended for DevTools/debugging):
+
+```bash
+python -m http.server 8000
+# then open http://localhost:8000
+
+# or, if you have Node available:
+npx serve .
+```
+
+Manual verification
+
+- Open the page and use the controls (Depth, Bottom Time, Gas, GF Low, GF High).
+- Click "Plan Dive" and inspect the table under the "Decompression Schedule" panel — rows are appended to `<tbody id="output">`.
+
+Development notes
+
+- All logic, styles and markup live in `index.html` (see the `<script>` block at bottom) unless modularized into `src/`.
+- The project currently uses ES modules under `src/` (see `src/sim.js`, `src/main.js`).
