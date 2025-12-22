@@ -68,11 +68,12 @@ function renderRows(result) {
 
   // Display detailed schedule
   const scheduleDiv = document.getElementById('detailedSchedule');
-  scheduleDiv.innerHTML = '<h4>Detailed Dive Schedule</h4><table><thead><tr><th>Phase</th><th>Depth</th><th>Rate</th><th>Time (min)</th><th>Accumulated (min)</th></tr></thead><tbody>';
+  let html = '<h4>Detailed Dive Schedule</h4><table><thead><tr><th>Phase</th><th>Depth</th><th>Rate</th><th>Time (min)</th><th>Accumulated (min)</th></tr></thead><tbody>';
   schedule.forEach(s => {
-    scheduleDiv.innerHTML += `<tr><td>${s.phase}</td><td>${s.depth}</td><td>${s.rate}</td><td>${s.time}</td><td>${s.accumulated}</td></tr>`;
+    html += `<tr><td>${s.phase}</td><td>${s.depth}</td><td>${s.rate}</td><td>${s.time}</td><td>${s.accumulated}</td></tr>`;
   });
-  scheduleDiv.innerHTML += '</tbody></table>';
+  html += '</tbody></table>';
+  scheduleDiv.innerHTML = html;
 }
 
 btn.addEventListener('click', () => {
