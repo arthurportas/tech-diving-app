@@ -12,6 +12,7 @@ const btn = document.getElementById('planBtn');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsPanel = document.getElementById('settingsPanel');
 const closeSettings = document.getElementById('closeSettings');
+const customGasContainer = document.getElementById('customGasContainer');
 
 function updateDecoUI() {
   const type = decoGasTypeSelect.value;
@@ -20,6 +21,14 @@ function updateDecoUI() {
 
 decoGasTypeSelect.addEventListener('change', updateDecoUI);
 updateDecoUI();
+
+function updateGasUI() {
+  const gas = gasSelect.value;
+  customGasContainer.style.display = gas === 'custom' ? 'block' : 'none';
+}
+
+gasSelect.addEventListener('change', updateGasUI);
+updateGasUI();
 
 function renderRows(rows) {
   out.innerHTML = '';
@@ -36,8 +45,9 @@ btn.addEventListener('click', () => {
   const gfHigh = Number(gfHighInput.value) / 100;
   const decoGasType = decoGasTypeSelect.value;
   const decoO2 = decoGasType === 'o2' ? 100 : Number(document.getElementById('decoO2').value) || 50;
+  const customO2 = Number(document.getElementById('customO2').value) || 32;
 
-  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2 });
+  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customO2 });
   renderRows(rows);
 });
 
