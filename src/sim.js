@@ -56,7 +56,7 @@ function ceilingDepth(tissues, depth, first, gfLow, gfHigh) {
 }
 
 // computeDecompressionSchedule returns an array of rows { depth, mins, gas }
-export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate, lastStopDepth }) {
+export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate, lastStopDepth, descentRate }) {
   const bottomGas = gasLabel === '18/45'
     ? { o2:0.18, he:0.45 }
     : gasLabel === '21/35'
