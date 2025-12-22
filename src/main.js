@@ -17,6 +17,9 @@ const customTypeSelect = document.getElementById('customType');
 const nitroxInputs = document.getElementById('nitroxInputs');
 const trimixInputs = document.getElementById('trimixInputs');
 const o2ShallowContainer = document.getElementById('o2ShallowContainer');
+const ascentModeSelect = document.getElementById('ascentMode');
+const singleAscent = document.getElementById('singleAscent');
+const multiAscent = document.getElementById('multiAscent');
 
 function updateDecoUI() {
   const type = decoGasTypeSelect.value;
@@ -46,6 +49,14 @@ function updateCustomUI() {
 }
 
 customTypeSelect.addEventListener('change', updateCustomUI);
+
+function updateAscentUI() {
+  const mode = ascentModeSelect.value;
+  singleAscent.style.display = mode === 'single' ? 'block' : 'none';
+  multiAscent.style.display = mode === 'multi' ? 'block' : 'none';
+}
+
+ascentModeSelect.addEventListener('change', updateAscentUI);
 
 function renderRows(rows) {
   out.innerHTML = '';

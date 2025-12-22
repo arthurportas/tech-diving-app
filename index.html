@@ -93,8 +93,23 @@
 <div id="settingsPanel" class="settings-panel">
   <div class="settings-content">
     <h4>Dive Planning Settings</h4>
-    <label>Ascent Rate (m/min)</label>
-    <input id="ascentRate" type="number" value="10">
+    <label>Ascent Rate Mode</label>
+    <select id="ascentMode">
+      <option value="single">Single Rate</option>
+      <option value="multi">Multiple Rates</option>
+    </select>
+    <div id="singleAscent">
+      <label>Ascent Rate (m/min)</label>
+      <input id="ascentRate" type="number" value="10">
+    </div>
+    <div id="multiAscent" style="display: none;">
+      <label>Deep Ascent Rate (m/min)</label>
+      <input id="deepAscentRate" type="number" value="6">
+      <label>Shallow Depth Threshold (m)</label>
+      <input id="shallowThreshold" type="number" value="21">
+      <label>Shallow Ascent Rate (m/min)</label>
+      <input id="shallowAscentRate" type="number" value="9">
+    </div>
     <button id="closeSettings">Close</button>
   </div>
 </div>
