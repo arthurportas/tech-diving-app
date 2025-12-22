@@ -5,8 +5,18 @@ const timeInput = document.getElementById('time');
 const gasSelect = document.getElementById('gas');
 const gfLowInput = document.getElementById('gfLow');
 const gfHighInput = document.getElementById('gfHigh');
+const decoGasTypeSelect = document.getElementById('decoGasType');
+const eanO2Container = document.getElementById('eanO2Container');
 const out = document.getElementById('output');
 const btn = document.getElementById('planBtn');
+
+function updateDecoUI() {
+  const type = decoGasTypeSelect.value;
+  eanO2Container.style.display = type === 'o2' ? 'none' : 'block';
+}
+
+decoGasTypeSelect.addEventListener('change', updateDecoUI);
+updateDecoUI();
 
 function renderRows(rows) {
   out.innerHTML = '';
@@ -21,9 +31,9 @@ btn.addEventListener('click', () => {
   const gasLabel = gasSelect.value;
   const gfLow = Number(gfLowInput.value) / 100;
   const gfHigh = Number(gfHighInput.value) / 100;
-  const decoO2 = Number(document.getElementById('decoO2').value) || 50;
-  const useO2Shallow = document.getElementById('useO2Shallow').checked;
+  const decoGasType = decoGasTypeSelect.value;
+  const decoO2 = decoGasType === 'o2' ? 100 : Number(document.getElementById('decoO2').value) || 50;
 
-  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoO2, useO2Shallow });
+  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2 });
   renderRows(rows);
 });

@@ -33,11 +33,17 @@
   <label>GF High</label>
   <input id="gfHigh" type="number" step="1" value="85">
 
-  <label>Deco Gas O₂ %</label>
-  <input id="decoO2" type="number" min="21" max="100" step="1" value="50">
+  <label>Deco Gas</label>
+  <select id="decoGasType">
+    <option value="ean">EAN</option>
+    <option value="o2">O₂</option>
+    <option value="ean+o2">EAN + O₂</option>
+  </select>
 
-  <label>Use pure O₂ for shallow deco</label>
-  <input type="checkbox" id="useO2Shallow">
+  <div id="eanO2Container">
+    <label>Deco Gas O₂ %</label>
+    <input id="decoO2" type="number" min="21" max="100" step="1" value="50">
+  </div>
 
   <button id="planBtn">Plan Dive</button>
 </div>
