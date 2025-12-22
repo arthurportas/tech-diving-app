@@ -102,7 +102,41 @@ function updateUnits() {
   }
 }
 
-document.getElementById('units').addEventListener('change', updateUnits);
+document.getElementById('units').addEventListener('change', () => {
+  updateUnits();
+  triggerRecalculation();
+});
+
+function triggerRecalculation() {
+  const depth = Number(depthInput.value) || 0;
+  if (depth > 0) {
+    btn.click();
+  }
+}
+
+// Add listeners to all settings inputs for automatic recalculation
+const settingsInputs = [
+  'ascentRate', 'deepAscentRate', 'shallowThreshold', 'shallowAscentRate',
+  'lastStopDepth', 'descentRate', 'ascentMode'
+];
+settingsInputs.forEach(id => {
+  const elem = document.getElementById(id);
+  if (elem) {
+    elem.addEventListener('change', triggerRecalculation);
+  }
+});
+
+// Add listeners to main dive parameters
+const diveInputs = [
+  'depth', 'time', 'gas', 'gfLow', 'gfHigh', 'decoGasType',
+  'decoO2', 'customO2', 'customTrimixO2', 'customHe', 'useO2Shallow', 'customType'
+];
+diveInputs.forEach(id => {
+  const elem = document.getElementById(id);
+  if (elem) {
+    elem.addEventListener('change', triggerRecalculation);
+  }
+});
 
 function renderRows(result) {
   const { rows, totalRuntime, totalDecoTime, schedule } = result;
