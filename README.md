@@ -20,6 +20,8 @@ Manual verification
 - Open the page and use the controls (Depth, Bottom Time, Gas, GF Low, GF High).
 - Click "Plan Dive" and inspect the table under the "Decompression Schedule" panel — rows are appended to `<tbody id="output">`.
 
+Example to try: Depth `60`, Bottom Time `20`, Gas `Trimix 18/45`, GF Low `30`, GF High `85`.
+
 Development notes
 
 - All logic, styles and markup live in `index.html` (see the `<script>` block at bottom) unless modularized into `src/`.

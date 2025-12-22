@@ -19,8 +19,8 @@ btn.addEventListener('click', () => {
   const depth = Number(depthInput.value) || 0;
   const time = Number(timeInput.value) || 0;
   const gasLabel = gasSelect.value;
-  const gfLow = Number(gfLowInput.value) || 0.3;
-  const gfHigh = Number(gfHighInput.value) || 0.85;
+  const gfLow = Number(gfLowInput.value) / 100;
+  const gfHigh = Number(gfHighInput.value) / 100;
 
   const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh });
   renderRows(rows);
