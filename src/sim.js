@@ -65,8 +65,6 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
     ? { o2:0.28, he:0 }
     : gasLabel === '32'
     ? { o2:0.32, he:0 }
-    : gasLabel === 'o2'
-    ? { o2:1, he:0 }
     : { o2:0.21, he:0 };
 
   let tissues = initTissues();
