@@ -17,10 +17,10 @@ npx serve .
 
 Manual verification
 
-- Open the page and use the controls (Depth, Bottom Time, Gas, GF Low, GF High).
+- Open the page and use the controls (Depth, Bottom Time, Gas, GF Low, GF High, Deco Gases).
 - Click "Plan Dive" and inspect the table under the "Decompression Schedule" panel — rows are appended to `<tbody id="output">`.
 
-Example to try: Depth `60`, Bottom Time `20`, Gas `Trimix 18/45`, GF Low `30`, GF High `85`.
+Example to try: Depth `60`, Bottom Time `20`, Gas `Trimix 18/45`, GF Low `30`, GF High `85`, Deco Gases: EAN50 and O₂ checked.
 
 Development notes
 

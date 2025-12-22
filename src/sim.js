@@ -56,7 +56,7 @@ function ceilingDepth(tissues, depth, first, gfLow, gfHigh) {
 }
 
 // computeDecompressionSchedule returns an array of rows { depth, mins, gas }
-export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh }) {
+export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, useEAN50, useO2 }) {
   const gas = gasLabel === '18/45'
     ? { o2:0.18, he:0.45 }
     : gasLabel === '21/35'
@@ -78,16 +78,22 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
 
   for (let d = first; d > 0; d -= 3) {
     let mins = 0;
+    let gas = 'EAN50'; // default
+    if (useO2 && d <= 6) gas = 'O₂';
+    else if (useEAN50) gas = 'EAN50';
+    else gas = 'Air'; // fallback if none selected
+
+    const fn2 = gas === 'O₂' ? 0 : 0.5;
     while (ceilingDepth(tissues, d, first, gfLow, gfHigh) > d - 0.1) {
       tissues = tissues.map((ti,i)=>({
-        n2: update(ti.n2, inspired(d, 0.5), ZHL16C[i].tN2, 1),
+        n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, 1),
         he: update(ti.he, 0, ZHL16C[i].tHe, 1)
       }));
       mins++;
       // safety cap to avoid infinite loops
       if (mins > 1000) break;
     }
-    if (mins > 0) rows.push({ depth: d, mins, gas: 'EAN50 / O₂' });
+    if (mins > 0) rows.push({ depth: d, mins, gas });
   }
 
   return rows;

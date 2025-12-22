@@ -21,7 +21,9 @@ btn.addEventListener('click', () => {
   const gasLabel = gasSelect.value;
   const gfLow = Number(gfLowInput.value) / 100;
   const gfHigh = Number(gfHighInput.value) / 100;
+  const useEAN50 = document.getElementById('useEAN50').checked;
+  const useO2 = document.getElementById('useO2').checked;
 
-  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh });
+  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, useEAN50, useO2 });
   renderRows(rows);
 });
