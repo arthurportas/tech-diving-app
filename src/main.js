@@ -153,7 +153,11 @@ function renderRows(result) {
   // Display detailed schedule
   const scheduleDiv = document.getElementById('detailedSchedule');
   let html = '<h4>Detailed Dive Schedule</h4><table><thead><tr><th>Phase</th><th>Depth</th><th>Rate</th><th>Time (min)</th><th>Accumulated (min)</th></tr></thead><tbody>';
-  schedule.forEach(s => {
+  
+  let currentGroup = 0;
+  let inAscentSegment = false;
+  
+  schedule.forEach((s, idx) => {
     let depth = s.depth;
     let rate = s.rate;
     if (isImperial) {
@@ -164,8 +168,30 @@ function renderRows(result) {
       depth = depth.replace(/ft/g, 'm');
       rate = rate.replace(/ft\/min/g, 'm/min');
     }
+    
     const phaseClass = s.phase.toLowerCase().replace(/ /g, '-');
-    html += `<tr class="phase-${phaseClass}"><td>${s.phase}</td><td>${depth}</td><td>${rate}</td><td>${s.time}</td><td>${s.accumulated}</td></tr>`;
+    let rowClass = `phase-${phaseClass}`;
+    
+    // Group ascent segments
+    if (s.phase === 'Ascent' || s.phase === 'Stop') {
+      if (!inAscentSegment) {
+        currentGroup++;
+        inAscentSegment = true;
+      }
+      rowClass += ` ascent-group-${currentGroup % 2}`;
+      
+      // Check if next phase breaks the segment
+      if (idx < schedule.length - 1) {
+        const nextPhase = schedule[idx + 1].phase;
+        if (nextPhase !== 'Ascent' && nextPhase !== 'Stop') {
+          inAscentSegment = false;
+        }
+      }
+    } else {
+      inAscentSegment = false;
+    }
+    
+    html += `<tr class="${rowClass}"><td>${s.phase}</td><td>${depth}</td><td>${rate}</td><td>${s.time}</td><td>${s.accumulated}</td></tr>`;
   });
   html += '</tbody></table>';
   scheduleDiv.innerHTML = html;

@@ -155,10 +155,10 @@ th { color: #8b949e; }
   background: #22272e;
 }
 
-.detailed-schedule .phase-ascent {
-  background: inherit;
+.detailed-schedule .ascent-group-0 {
+  background: #1a1f26;
 }
 
-.detailed-schedule .phase-stop {
-  background: inherit;
+.detailed-schedule .ascent-group-1 {
+  background: #0d1117;
 }
