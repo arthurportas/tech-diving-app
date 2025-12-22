@@ -13,6 +13,9 @@ const settingsBtn = document.getElementById('settingsBtn');
 const settingsPanel = document.getElementById('settingsPanel');
 const closeSettings = document.getElementById('closeSettings');
 const customGasContainer = document.getElementById('customGasContainer');
+const customTypeSelect = document.getElementById('customType');
+const nitroxInputs = document.getElementById('nitroxInputs');
+const trimixInputs = document.getElementById('trimixInputs');
 
 function updateDecoUI() {
   const type = decoGasTypeSelect.value;
@@ -25,10 +28,21 @@ updateDecoUI();
 function updateGasUI() {
   const gas = gasSelect.value;
   customGasContainer.style.display = gas === 'custom' ? 'block' : 'none';
+  if (gas === 'custom') {
+    updateCustomUI();
+  }
 }
 
 gasSelect.addEventListener('change', updateGasUI);
 updateGasUI();
+
+function updateCustomUI() {
+  const type = customTypeSelect.value;
+  nitroxInputs.style.display = type === 'nitrox' ? 'block' : 'none';
+  trimixInputs.style.display = type === 'trimix' ? 'block' : 'none';
+}
+
+customTypeSelect.addEventListener('change', updateCustomUI);
 
 function renderRows(rows) {
   out.innerHTML = '';
@@ -45,9 +59,12 @@ btn.addEventListener('click', () => {
   const gfHigh = Number(gfHighInput.value) / 100;
   const decoGasType = decoGasTypeSelect.value;
   const decoO2 = decoGasType === 'o2' ? 100 : Number(document.getElementById('decoO2').value) || 50;
+  const customType = document.getElementById('customType').value;
   const customO2 = Number(document.getElementById('customO2').value) || 32;
+  const customTrimixO2 = Number(document.getElementById('customTrimixO2').value) || 18;
+  const customHe = Number(document.getElementById('customHe').value) || 45;
 
-  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customO2 });
+  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe });
   renderRows(rows);
 });
 

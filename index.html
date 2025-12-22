@@ -30,8 +30,21 @@
   </select>
 
   <div id="customGasContainer" style="display: none;">
-    <label>EAN</label>
-    <input id="customO2" type="number" min="21" max="100" step="1" value="32">
+    <label>Gas Type</label>
+    <select id="customType">
+      <option value="nitrox">Nitrox</option>
+      <option value="trimix">Trimix</option>
+    </select>
+    <div id="nitroxInputs">
+      <label>O₂ %</label>
+      <input id="customO2" type="number" min="21" max="100" step="1" value="32">
+    </div>
+    <div id="trimixInputs" style="display: none;">
+      <label>O₂ %</label>
+      <input id="customTrimixO2" type="number" min="10" max="50" step="1" value="18">
+      <label>He %</label>
+      <input id="customHe" type="number" min="0" max="80" step="1" value="45">
+    </div>
   </div>
 
   <label>GF Low</label>
