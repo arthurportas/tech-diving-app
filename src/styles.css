@@ -115,3 +115,9 @@ th { color: #8b949e; }
 }
 
 .settings-content button:hover { background: #b62333; }
+
+.total-runtime {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #e6edf3;
+}

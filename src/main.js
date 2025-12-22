@@ -58,11 +58,13 @@ function updateAscentUI() {
 
 ascentModeSelect.addEventListener('change', updateAscentUI);
 
-function renderRows(rows) {
+function renderRows(result) {
+  const { rows, totalRuntime } = result;
   out.innerHTML = '';
   rows.forEach(r => {
     out.innerHTML += `<tr><td>${r.depth}</td><td>${r.mins}</td><td>${r.gas}</td></tr>`;
   });
+  document.getElementById('totalRuntime').textContent = `Total Dive Runtime: ${totalRuntime} minutes`;
 }
 
 btn.addEventListener('click', () => {

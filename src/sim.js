@@ -83,6 +83,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
 
   const first = Math.ceil(ceilingDepth(tissues, depth, depth, gfLow, gfHigh) / 3) * 3;
   const rows = [];
+  let totalRuntime = depth / descentRate + time;
 
   for (let d = first; d > lastStopDepth; d -= 3) {
     let mins = 0;
@@ -102,12 +103,14 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
       if (mins > 1000) break;
     }
     if (mins > 0) rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
+    totalRuntime += mins;
 
     // Ascent to next depth
     if (d > 0) {
       const nextD = Math.max(0, d - 3);
       const rate = ascentMode === 'single' ? ascentRate : (d > shallowThreshold ? deepAscentRate : shallowAscentRate);
       const ascentTime = (d - nextD) / rate;
+      totalRuntime += ascentTime;
       tissues = tissues.map((ti,i)=>({
         n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, ascentTime),
         he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
@@ -134,15 +137,17 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
       if (mins > 1000) break;
     }
     if (mins > 0) rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
+    totalRuntime += mins;
 
     // Ascent to surface
     const rate = ascentMode === 'single' ? ascentRate : (d > shallowThreshold ? deepAscentRate : shallowAscentRate);
     const ascentTime = d / rate;
+    totalRuntime += ascentTime;
     tissues = tissues.map((ti,i)=>({
       n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, ascentTime),
       he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
     }));
   }
 
-  return rows;
+  return { rows, totalRuntime: Math.ceil(totalRuntime) };
 }
