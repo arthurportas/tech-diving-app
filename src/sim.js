@@ -84,6 +84,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
   const first = Math.ceil(ceilingDepth(tissues, depth, depth, gfLow, gfHigh) / 3) * 3;
   const rows = [];
   let totalRuntime = depth / descentRate + time;
+  let totalDecoTime = 0;
 
   for (let d = first; d > lastStopDepth; d -= 3) {
     let mins = 0;
@@ -102,7 +103,10 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
       // safety cap to avoid infinite loops
       if (mins > 1000) break;
     }
-    if (mins > 0) rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
+    if (mins > 0) {
+      rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
+      totalDecoTime += mins;
+    }
     totalRuntime += mins;
 
     // Ascent to next depth
@@ -136,7 +140,10 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
       mins++;
       if (mins > 1000) break;
     }
-    if (mins > 0) rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
+    if (mins > 0) {
+      rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
+      totalDecoTime += mins;
+    }
     totalRuntime += mins;
 
     // Ascent to surface
@@ -149,5 +156,5 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
     }));
   }
 
-  return { rows, totalRuntime: Math.ceil(totalRuntime) };
+  return { rows, totalRuntime: Math.ceil(totalRuntime), totalDecoTime };
 }
