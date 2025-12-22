@@ -83,8 +83,9 @@ btn.addEventListener('click', () => {
   const deepAscentRate = Number(document.getElementById('deepAscentRate').value) || 6;
   const shallowThreshold = Number(document.getElementById('shallowThreshold').value) || 21;
   const shallowAscentRate = Number(document.getElementById('shallowAscentRate').value) || 9;
+  const lastStopDepth = Number(document.getElementById('lastStopDepth').value) || 6;
 
-  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate });
+  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate, lastStopDepth });
   renderRows(rows);
 });
 

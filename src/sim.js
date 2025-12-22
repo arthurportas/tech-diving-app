@@ -56,7 +56,7 @@ function ceilingDepth(tissues, depth, first, gfLow, gfHigh) {
 }
 
 // computeDecompressionSchedule returns an array of rows { depth, mins, gas }
-export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate }) {
+export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate, lastStopDepth }) {
   const bottomGas = gasLabel === '18/45'
     ? { o2:0.18, he:0.45 }
     : gasLabel === '21/35'
@@ -84,7 +84,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
   const first = Math.ceil(ceilingDepth(tissues, depth, depth, gfLow, gfHigh) / 3) * 3;
   const rows = [];
 
-  for (let d = first; d > 0; d -= 3) {
+  for (let d = first; d > lastStopDepth; d -= 3) {
     let mins = 0;
     let fn2;
     if (decoGasType === 'o2') {
@@ -113,6 +113,35 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
         he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
       }));
     }
+
+  // Last stop at lastStopDepth
+  if (lastStopDepth > 0) {
+    let d = lastStopDepth;
+    let mins = 0;
+    let fn2;
+    if (decoGasType === 'o2') {
+      fn2 = 0;
+    } else {
+      fn2 = (useO2Shallow && d <= 6) ? 0 : (100 - decoO2) / 100;
+    }
+    while (ceilingDepth(tissues, d, first, gfLow, gfHigh) > d - 0.1) {
+      tissues = tissues.map((ti,i)=>({
+        n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, 1),
+        he: update(ti.he, 0, ZHL16C[i].tHe, 1)
+      }));
+      mins++;
+      if (mins > 1000) break;
+    }
+    if (mins > 0) rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
+
+    // Ascent to surface
+    const rate = ascentMode === 'single' ? ascentRate : (d > shallowThreshold ? deepAscentRate : shallowAscentRate);
+    const ascentTime = d / rate;
+    tissues = tissues.map((ti,i)=>({
+      n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, ascentTime),
+      he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
+    }));
+  }
 
   return rows;
 }
