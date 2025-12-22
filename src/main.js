@@ -22,7 +22,8 @@ btn.addEventListener('click', () => {
   const gfLow = Number(gfLowInput.value) / 100;
   const gfHigh = Number(gfHighInput.value) / 100;
   const decoO2 = Number(document.getElementById('decoO2').value) || 50;
+  const useO2Shallow = document.getElementById('useO2Shallow').checked;
 
-  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoO2 });
+  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoO2, useO2Shallow });
   renderRows(rows);
 });

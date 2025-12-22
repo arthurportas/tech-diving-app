@@ -20,7 +20,7 @@ Manual verification
 - Open the page and use the controls (Depth, Bottom Time, Gas, GF Low, GF High, Deco Gas O₂ %).
 - Click "Plan Dive" and inspect the table under the "Decompression Schedule" panel — rows are appended to `<tbody id="output">`.
 
-Example to try: Depth `60`, Bottom Time `20`, Gas `Trimix 18/45`, GF Low `30`, GF High `85`, Deco Gas O₂ % `50`.
+Example to try: Depth `60`, Bottom Time `20`, Gas `Trimix 18/45`, GF Low `30`, GF High `85`, Deco Gas O₂ % `50`, Use O₂ for shallow stops checked.
 
 Development notes
 
