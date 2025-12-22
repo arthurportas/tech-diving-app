@@ -16,10 +16,13 @@ const customGasContainer = document.getElementById('customGasContainer');
 const customTypeSelect = document.getElementById('customType');
 const nitroxInputs = document.getElementById('nitroxInputs');
 const trimixInputs = document.getElementById('trimixInputs');
+const o2ShallowContainer = document.getElementById('o2ShallowContainer');
 
 function updateDecoUI() {
   const type = decoGasTypeSelect.value;
   eanO2Container.style.display = type === 'o2' ? 'none' : 'block';
+  o2ShallowContainer.style.display = type === 'o2' ? 'none' : 'block';
+  document.getElementById('useO2Shallow').checked = type === 'ean+o2';
 }
 
 decoGasTypeSelect.addEventListener('change', updateDecoUI);
@@ -59,12 +62,13 @@ btn.addEventListener('click', () => {
   const gfHigh = Number(gfHighInput.value) / 100;
   const decoGasType = decoGasTypeSelect.value;
   const decoO2 = decoGasType === 'o2' ? 100 : Number(document.getElementById('decoO2').value) || 50;
+  const useO2Shallow = document.getElementById('useO2Shallow').checked;
   const customType = document.getElementById('customType').value;
   const customO2 = Number(document.getElementById('customO2').value) || 32;
   const customTrimixO2 = Number(document.getElementById('customTrimixO2').value) || 18;
   const customHe = Number(document.getElementById('customHe').value) || 45;
 
-  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe });
+  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow });
   renderRows(rows);
 });
 
