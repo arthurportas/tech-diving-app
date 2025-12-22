@@ -56,7 +56,7 @@ function ceilingDepth(tissues, depth, first, gfLow, gfHigh) {
 }
 
 // computeDecompressionSchedule returns an array of rows { depth, mins, gas }
-export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow }) {
+export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate }) {
   const bottomGas = gasLabel === '18/45'
     ? { o2:0.18, he:0.45 }
     : gasLabel === '21/35'
@@ -102,7 +102,17 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
       if (mins > 1000) break;
     }
     if (mins > 0) rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
-  }
+
+    // Ascent to next depth
+    if (d > 0) {
+      const nextD = Math.max(0, d - 3);
+      const rate = ascentMode === 'single' ? ascentRate : (d > shallowThreshold ? deepAscentRate : shallowAscentRate);
+      const ascentTime = (d - nextD) / rate;
+      tissues = tissues.map((ti,i)=>({
+        n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, ascentTime),
+        he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
+      }));
+    }
 
   return rows;
 }
