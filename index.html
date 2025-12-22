@@ -13,10 +13,10 @@
 <h1>Bühlmann ZH-L16C Decompression Planner</h1>
 
 <div class="panel">
-  <label>Max Depth (m)</label>
+  <label id="depthLabel">Max Depth (m)</label>
   <input id="depth" type="number" value="60">
 
-  <label>Bottom Time (min)</label>
+  <label id="timeLabel">Bottom Time (min)</label>
   <input id="time" type="number" value="20">
 
   <label>Bottom Gas</label>
@@ -47,13 +47,13 @@
     </div>
   </div>
 
-  <label>GF Low</label>
+  <label id="gfLowLabel">GF Low</label>
   <input id="gfLow" type="number" step="1" value="30">
 
-  <label>GF High</label>
+  <label id="gfHighLabel">GF High</label>
   <input id="gfHigh" type="number" step="1" value="85">
 
-  <label>Deco Gas</label>
+  <label id="decoGasLabel">Deco Gas</label>
   <select id="decoGasType">
     <option value="ean">EAN</option>
     <option value="o2">O₂</option>
@@ -79,7 +79,7 @@
   <table>
     <thead>
       <tr>
-        <th>Depth (m)</th>
+        <th id="depthHeader">Depth (m)</th>
         <th>Time (min)</th>
         <th>Gas</th>
       </tr>
@@ -96,29 +96,34 @@
 <div id="settingsPanel" class="settings-panel">
   <div class="settings-content">
     <h4>Dive Planning Settings</h4>
-    <label>Ascent Rate Mode</label>
+    <label>Units</label>
+    <select id="units">
+      <option value="metric">Metric</option>
+      <option value="imperial">Imperial</option>
+    </select>
+    <label id="ascentModeLabel">Ascent Rate Mode</label>
     <select id="ascentMode">
       <option value="single">Single Rate</option>
       <option value="multi">Multiple Rates</option>
     </select>
     <div id="singleAscent">
-      <label>Ascent Rate (m/min)</label>
+      <label id="ascentRateLabel">Ascent Rate (m/min)</label>
       <input id="ascentRate" type="number" value="10">
     </div>
     <div id="multiAscent" style="display: none;">
-      <label>Deep Ascent Rate (m/min)</label>
+      <label id="deepAscentRateLabel">Deep Ascent Rate (m/min)</label>
       <input id="deepAscentRate" type="number" value="6">
-      <label>Shallow Depth Threshold (m)</label>
+      <label id="shallowThresholdLabel">Shallow Depth Threshold (m)</label>
       <input id="shallowThreshold" type="number" value="21">
-      <label>Shallow Ascent Rate (m/min)</label>
+      <label id="shallowAscentRateLabel">Shallow Ascent Rate (m/min)</label>
       <input id="shallowAscentRate" type="number" value="9">
     </div>
-    <label>Last Stop Depth (m)</label>
+    <label id="lastStopDepthLabel">Last Stop Depth (m)</label>
     <select id="lastStopDepth">
       <option value="3">3</option>
       <option value="6" selected>6</option>
     </select>
-    <label>Descent Rate (m/min)</label>
+    <label id="descentRateLabel">Descent Rate (m/min)</label>
     <input id="descentRate" type="number" min="1" max="50" step="1" value="20">
     <button id="closeSettings">Close</button>
   </div>

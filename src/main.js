@@ -1,5 +1,10 @@
 import { computeDecompressionSchedule } from './sim.js';
 
+const M_TO_FT = 3.28084;
+
+function mToFt(m) { return m * M_TO_FT; }
+function ftToM(ft) { return ft / M_TO_FT; }
+
 const depthInput = document.getElementById('depth');
 const timeInput = document.getElementById('time');
 const gasSelect = document.getElementById('gas');
@@ -58,11 +63,56 @@ function updateAscentUI() {
 
 ascentModeSelect.addEventListener('change', updateAscentUI);
 
+function updateUnits() {
+  const units = document.getElementById('units').value;
+  const isImperial = units === 'imperial';
+
+  // Update main labels
+  document.getElementById('depthLabel').textContent = `Max Depth (${isImperial ? 'ft' : 'm'})`;
+  document.getElementById('timeLabel').textContent = 'Bottom Time (min)';
+  document.getElementById('gfLowLabel').textContent = 'GF Low';
+  document.getElementById('gfHighLabel').textContent = 'GF High';
+  document.getElementById('decoGasLabel').textContent = 'Deco Gas';
+  document.getElementById('depthHeader').textContent = `Depth (${isImperial ? 'ft' : 'm'})`;
+
+  // Update settings labels
+  document.getElementById('ascentModeLabel').textContent = 'Ascent Rate Mode';
+  document.getElementById('ascentRateLabel').textContent = `Ascent Rate (${isImperial ? 'ft' : 'm'}/min)`;
+  document.getElementById('deepAscentRateLabel').textContent = `Deep Ascent Rate (${isImperial ? 'ft' : 'm'}/min)`;
+  document.getElementById('shallowThresholdLabel').textContent = `Shallow Depth Threshold (${isImperial ? 'ft' : 'm'})`;
+  document.getElementById('shallowAscentRateLabel').textContent = `Shallow Ascent Rate (${isImperial ? 'ft' : 'm'}/min)`;
+  document.getElementById('lastStopDepthLabel').textContent = `Last Stop Depth (${isImperial ? 'ft' : 'm'})`;
+  document.getElementById('descentRateLabel').textContent = `Descent Rate (${isImperial ? 'ft' : 'm'}/min)`;
+
+  // Convert input values
+  if (isImperial) {
+    depthInput.value = Math.round(mToFt(depthInput.value));
+    document.getElementById('ascentRate').value = Math.round(mToFt(document.getElementById('ascentRate').value));
+    document.getElementById('deepAscentRate').value = Math.round(mToFt(document.getElementById('deepAscentRate').value));
+    document.getElementById('shallowThreshold').value = Math.round(mToFt(document.getElementById('shallowThreshold').value));
+    document.getElementById('shallowAscentRate').value = Math.round(mToFt(document.getElementById('shallowAscentRate').value));
+    document.getElementById('descentRate').value = Math.round(mToFt(document.getElementById('descentRate').value));
+  } else {
+    depthInput.value = Math.round(ftToM(depthInput.value));
+    document.getElementById('ascentRate').value = Math.round(ftToM(document.getElementById('ascentRate').value));
+    document.getElementById('deepAscentRate').value = Math.round(ftToM(document.getElementById('deepAscentRate').value));
+    document.getElementById('shallowThreshold').value = Math.round(ftToM(document.getElementById('shallowThreshold').value));
+    document.getElementById('shallowAscentRate').value = Math.round(ftToM(document.getElementById('shallowAscentRate').value));
+    document.getElementById('descentRate').value = Math.round(ftToM(document.getElementById('descentRate').value));
+  }
+}
+
+document.getElementById('units').addEventListener('change', updateUnits);
+
 function renderRows(result) {
   const { rows, totalRuntime, totalDecoTime, schedule } = result;
+  const units = document.getElementById('units').value;
+  const isImperial = units === 'imperial';
+
   out.innerHTML = '';
   rows.forEach(r => {
-    out.innerHTML += `<tr><td>${r.depth}</td><td>${r.mins}</td><td>${r.gas}</td></tr>`;
+    const depth = isImperial ? Math.round(mToFt(r.depth)) : r.depth;
+    out.innerHTML += `<tr><td>${depth}</td><td>${r.mins}</td><td>${r.gas}</td></tr>`;
   });
   document.getElementById('totalRuntime').innerHTML = `Total Dive Runtime: ${totalRuntime} minutes<br>Total Decompression Time: ${totalDecoTime} minutes`;
 
@@ -70,7 +120,17 @@ function renderRows(result) {
   const scheduleDiv = document.getElementById('detailedSchedule');
   let html = '<h4>Detailed Dive Schedule</h4><table><thead><tr><th>Phase</th><th>Depth</th><th>Rate</th><th>Time (min)</th><th>Accumulated (min)</th></tr></thead><tbody>';
   schedule.forEach(s => {
-    html += `<tr><td>${s.phase}</td><td>${s.depth}</td><td>${s.rate}</td><td>${s.time}</td><td>${s.accumulated}</td></tr>`;
+    let depth = s.depth;
+    let rate = s.rate;
+    if (isImperial) {
+      depth = depth.replace(/(\d+)-(\d+)m/g, (match, d1, d2) => `${Math.round(mToFt(d1))}-${Math.round(mToFt(d2))}ft`);
+      depth = depth.replace(/(\d+)m/g, (match, d) => `${Math.round(mToFt(d))}ft`);
+      rate = rate.replace(/(\d+\.?\d*) m\/min/g, (match, r) => `${(r * M_TO_FT).toFixed(1)} ft/min`);
+    } else {
+      depth = depth.replace(/ft/g, 'm');
+      rate = rate.replace(/ft\/min/g, 'm/min');
+    }
+    html += `<tr><td>${s.phase}</td><td>${depth}</td><td>${rate}</td><td>${s.time}</td><td>${s.accumulated}</td></tr>`;
   });
   html += '</tbody></table>';
   scheduleDiv.innerHTML = html;
@@ -104,6 +164,7 @@ btn.addEventListener('click', () => {
 settingsBtn.addEventListener('click', () => {
   settingsPanel.style.display = 'block';
   setTimeout(() => settingsPanel.classList.add('open'), 10);
+  updateUnits();
 });
 
 closeSettings.addEventListener('click', closeSettingsPanel);
