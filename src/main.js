@@ -197,9 +197,10 @@ function createFullDiveProfileGraph(result) {
   // Add descent
   const descentTime = depth / descentRate;
   currentTime = descentTime;
-  data.push({ time: currentTime, depth: depth, phase: 'descent', stopTime: 0, accumulated: Math.ceil(currentTime) });
+  // Mark end of descent (max depth reached)
+  data.push({ time: currentTime, depth: depth, phase: 'descent', stopTime: descentTime, accumulated: Math.ceil(currentTime) });
   
-  // Add bottom time
+  // Add bottom time (end of bottom marks ascent start)
   currentTime += time;
   data.push({ time: currentTime, depth: depth, phase: 'bottom', stopTime: time, accumulated: Math.ceil(currentTime) });
   
@@ -360,6 +361,7 @@ function showTooltip(event, d) {
     ? 'Ascent Start'
     : d.phase;
 
+  const durationLabel = d.phase === 'stop' ? 'Stop Time' : 'Segment Time';
   const content = `
     <div class="d3-tooltip-row">
       <span class="d3-tooltip-label">Type:</span>
@@ -370,12 +372,12 @@ function showTooltip(event, d) {
       <span>${d.depth}m</span>
     </div>
     <div class="d3-tooltip-row">
-      <span class="d3-tooltip-label">Stop Time:</span>
-      <span>${d.stopTime}m</span>
+      <span class="d3-tooltip-label">${durationLabel}:</span>
+      <span>${Math.round(d.stopTime)}m</span>
     </div>
     <div class="d3-tooltip-row">
       <span class="d3-tooltip-label">Accumulated:</span>
-      <span>${d.accumulated}m</span>
+      <span>${Math.round(d.accumulated)}m</span>
     </div>
   `;
   
