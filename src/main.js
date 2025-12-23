@@ -5,6 +5,211 @@ const M_TO_FT = 3.28084;
 function mToFt(m) { return m * M_TO_FT; }
 function ftToM(ft) { return ft / M_TO_FT; }
 
+// Toggle graph collapse/expand
+function toggleGraph() {
+  const graphSection = document.querySelector('.graph-section');
+  graphSection.classList.toggle('collapsed');
+}
+
+// Create D3.js dive profile visualization
+function createDiveProfileGraph(result) {
+  const { rows, totalRuntime } = result;
+  const depth = Number(depthInput.value) || 0;
+  const time = Number(timeInput.value) || 0;
+  
+  if (!depth || !time) return;
+
+  // Build data points for the line
+  const data = [];
+  let currentTime = time; // Start at end of bottom time
+  
+  // Add bottom point
+  data.push({ time: currentTime, depth: depth, phase: 'bottom', stopTime: 0, accumulated: time });
+  
+  // Parse rows to extract decompression stops
+  let previousDepth = depth;
+  let lastAccumulated = time;
+  
+  rows.forEach((row, idx) => {
+    const stopDepth = row.depth;
+    const stopTime = row.mins;
+    
+    // Time for ascent from previous depth to this depth
+    // Estimate using average ascent rate
+    const depthDifference = previousDepth - stopDepth;
+    const ascentRate = 10; // Default ascent rate
+    const ascentTime = depthDifference / ascentRate;
+    
+    currentTime += ascentTime;
+    lastAccumulated += ascentTime;
+    
+    // Add ascent endpoint
+    if (idx === 0 || previousDepth !== stopDepth) {
+      data.push({ time: currentTime, depth: stopDepth, phase: 'ascent-end', stopTime: 0, accumulated: Math.ceil(lastAccumulated) });
+    }
+    
+    // Add stop
+    currentTime += stopTime;
+    lastAccumulated += stopTime;
+    data.push({ time: currentTime, depth: stopDepth, phase: 'stop', stopTime: stopTime, accumulated: Math.ceil(lastAccumulated) });
+    
+    previousDepth = stopDepth;
+  });
+  
+  // Add final ascent to surface
+  const finalAscentTime = previousDepth / 10;
+  currentTime += finalAscentTime;
+  lastAccumulated += finalAscentTime;
+  data.push({ time: currentTime, depth: 0, phase: 'surface', stopTime: 0, accumulated: Math.ceil(lastAccumulated) });
+  
+  // D3 dimensions
+  const margin = { top: 30, right: 40, bottom: 50, left: 60 };
+  const svgElement = document.getElementById('diveProfileChart');
+  const width = svgElement.clientWidth - margin.left - margin.right;
+  const height = svgElement.clientHeight - margin.top - margin.bottom;
+  
+  // Clear previous chart
+  d3.select(svgElement).selectAll("*").remove();
+  
+  const svg = d3.select(svgElement)
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom)
+    .append('g')
+    .attr('transform', `translate(${margin.left},${margin.top})`);
+  
+  // Scales
+  const xScale = d3.scaleLinear()
+    .domain([time, d3.max(data, d => d.time)])
+    .range([0, width]);
+  
+  const yScale = d3.scaleLinear()
+    .domain([depth, 0]) // Depth to surface (0)
+    .range([0, height]);
+  
+  // Axes
+  const xAxis = d3.axisBottom(xScale).ticks(8);
+  const yAxis = d3.axisLeft(yScale).ticks(Math.ceil(depth / 5)).tickFormat(d => Math.round(d));
+  
+  // Grid lines for Y-axis (every 5m)
+  svg.selectAll('.d3-grid-line')
+    .data(d3.range(0, depth + 1, 5))
+    .enter()
+    .append('line')
+    .attr('class', 'd3-grid-line')
+    .attr('x1', 0)
+    .attr('x2', width)
+    .attr('y1', d => yScale(d))
+    .attr('y2', d => yScale(d));
+  
+  // Add Y-axis
+  svg.append('g')
+    .attr('class', 'd3-axis')
+    .call(yAxis);
+  
+  // Add X-axis
+  svg.append('g')
+    .attr('class', 'd3-axis')
+    .attr('transform', `translate(0,${height})`)
+    .call(xAxis);
+  
+  // Y-axis label
+  svg.append('text')
+    .attr('class', 'd3-axis-label')
+    .attr('transform', 'rotate(-90)')
+    .attr('y', 0 - margin.left + 15)
+    .attr('x', 0 - (height / 2))
+    .attr('dy', '1em')
+    .style('text-anchor', 'middle')
+    .text('Depth (m)');
+  
+  // X-axis label
+  svg.append('text')
+    .attr('class', 'd3-axis-label')
+    .attr('x', width / 2)
+    .attr('y', height + margin.bottom - 10)
+    .style('text-anchor', 'middle')
+    .text('Dive Time (min)');
+  
+  // Line generator
+  const line = d3.line()
+    .x(d => xScale(d.time))
+    .y(d => yScale(d.depth));
+  
+  // Draw profile line
+  svg.append('path')
+    .datum(data)
+    .attr('class', 'd3-profile-line')
+    .attr('d', line);
+  
+  // Add feather lines from stops to surface
+  data.forEach(d => {
+    if (d.phase === 'stop' && d.depth > 0) {
+      svg.append('line')
+        .attr('class', 'd3-feather-line')
+        .attr('x1', xScale(d.time))
+        .attr('x2', xScale(d.time))
+        .attr('y1', yScale(d.depth))
+        .attr('y2', yScale(0));
+    }
+  });
+  
+  // Add stop points
+  svg.selectAll('.d3-stop-point')
+    .data(data.filter(d => d.phase === 'stop'))
+    .enter()
+    .append('circle')
+    .attr('class', 'd3-stop-point')
+    .attr('cx', d => xScale(d.time))
+    .attr('cy', d => yScale(d.depth))
+    .attr('r', 4)
+    .on('mouseover', function(event, d) {
+      showTooltip(event, d);
+    })
+    .on('mouseout', hideTooltip);
+}
+
+// Tooltip functions
+let currentTooltip = null;
+
+function showTooltip(event, d) {
+  let tooltip = document.querySelector('.d3-tooltip');
+  if (!tooltip) {
+    tooltip = document.createElement('div');
+    tooltip.className = 'd3-tooltip';
+    document.body.appendChild(tooltip);
+    currentTooltip = tooltip;
+  }
+  
+  const content = `
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Depth:</span>
+      <span>${d.depth}m</span>
+    </div>
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Stop Time:</span>
+      <span>${d.stopTime}m</span>
+    </div>
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Accumulated:</span>
+      <span>${d.accumulated}m</span>
+    </div>
+  `;
+  
+  tooltip.innerHTML = content;
+  tooltip.classList.add('active');
+  
+  const x = event.pageX + 10;
+  const y = event.pageY - 30;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+
+function hideTooltip() {
+  if (currentTooltip) {
+    currentTooltip.classList.remove('active');
+  }
+}
+
 const depthInput = document.getElementById('depth');
 const timeInput = document.getElementById('time');
 const gasSelect = document.getElementById('gas');
@@ -157,6 +362,9 @@ function renderRows(result) {
     out.innerHTML += `<tr><td>${depth}</td><td>${r.mins}</td><td>${r.gas}</td></tr>`;
   });
   document.getElementById('totalRuntime').innerHTML = `Total Dive Runtime: ${totalRuntime} minutes<br>Total Decompression Time: ${totalDecoTime} minutes`;
+
+  // Create dive profile graph
+  createDiveProfileGraph(result);
 
   // Display detailed schedule
   const scheduleDiv = document.getElementById('detailedSchedule');
