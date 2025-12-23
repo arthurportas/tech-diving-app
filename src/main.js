@@ -173,6 +173,56 @@ function createDiveProfileGraph(result, strategies = []) {
     .datum(data)
     .attr('class', 'd3-profile-line')
     .attr('d', line);
+
+  // Draw strategy overlay lines (dashed) for each selected strategy
+  if (strategyData && strategyData.length > 0) {
+    strategyData.forEach(s => {
+      svg.append('path')
+        .datum(s.data)
+        .attr('class', 'd3-strategy-line')
+        .attr('d', line)
+        .style('stroke', s.color)
+        .style('stroke-width', '2')
+        .style('stroke-dasharray', '4,4')
+        .style('fill', 'none')
+        .attr('data-strategy', s.label);
+    });
+
+    // Legend: baseline + strategies
+    const legendY = 10;
+    const legendX = width - 150;
+    svg.append('line')
+      .attr('x1', legendX)
+      .attr('x2', legendX + 30)
+      .attr('y1', legendY)
+      .attr('y2', legendY)
+      .attr('stroke', 'var(--accent-cyan)')
+      .attr('stroke-width', '2.5');
+    svg.append('text')
+      .attr('x', legendX + 35)
+      .attr('y', legendY + 4)
+      .attr('fill', 'var(--text-secondary)')
+      .attr('font-size', '0.85rem')
+      .text('Baseline');
+
+    strategyData.forEach((s, i) => {
+      const y = legendY + (i + 1) * 20;
+      svg.append('line')
+        .attr('x1', legendX)
+        .attr('x2', legendX + 30)
+        .attr('y1', y)
+        .attr('y2', y)
+        .attr('stroke', s.color)
+        .attr('stroke-width', '2')
+        .attr('stroke-dasharray', '4,4');
+      svg.append('text')
+        .attr('x', legendX + 35)
+        .attr('y', y + 4)
+        .attr('fill', 'var(--text-secondary)')
+        .attr('font-size', '0.85rem')
+        .text(s.label);
+    });
+  }
   
   // Add feather lines from key points (stops, descent end, bottom end) to surface
   data.forEach(d => {
@@ -337,17 +387,8 @@ function createFullDiveProfileGraph(result) {
     .attr('class', 'd3-profile-line')
     .attr('d', line);
   
-  // Draw strategy profile lines
-  strategyData.forEach(s => {
-    svg.append('path')
-      .datum(s.data)
-      .attr('class', 'd3-strategy-line')
-      .attr('d', line)
-      .style('stroke', s.color)
-      .style('stroke-width', '2')
-      .style('stroke-dasharray', '4,4')
-      .style('fill', 'none');
-  });
+  // Note: strategy overlays are shown on the Dive Ascent Profile.
+  // The full profile graph renders the baseline only for clarity.
   
   // Add feather lines from stops to surface
   data.forEach(d => {
@@ -375,45 +416,7 @@ function createFullDiveProfileGraph(result) {
     })
     .on('mouseout', hideTooltip);
   
-  // Add legend if strategies present
-  if (strategyData.length > 0) {
-    const legendY = 10;
-    const legendX = width - 150;
-    
-    // Baseline legend entry
-    svg.append('line')
-      .attr('x1', legendX)
-      .attr('x2', legendX + 30)
-      .attr('y1', legendY)
-      .attr('y2', legendY)
-      .attr('stroke', 'var(--accent-cyan)')
-      .attr('stroke-width', '2.5');
-    svg.append('text')
-      .attr('x', legendX + 35)
-      .attr('y', legendY + 4)
-      .attr('fill', 'var(--text-secondary)')
-      .attr('font-size', '0.85rem')
-      .text('Baseline');
-    
-    // Strategy legend entries
-    strategyData.forEach((s, i) => {
-      const y = legendY + (i + 1) * 20;
-      svg.append('line')
-        .attr('x1', legendX)
-        .attr('x2', legendX + 30)
-        .attr('y1', y)
-        .attr('y2', y)
-        .attr('stroke', s.color)
-        .attr('stroke-width', '2')
-        .attr('stroke-dasharray', '4,4');
-      svg.append('text')
-        .attr('x', legendX + 35)
-        .attr('y', y + 4)
-        .attr('fill', 'var(--text-secondary)')
-        .attr('font-size', '0.85rem')
-        .text(s.label);
-    });
-  }
+  // Legend omitted here to keep focus on ascent comparison in the other graph.
 }
 
 // Tooltip functions
