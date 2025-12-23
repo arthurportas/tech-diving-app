@@ -622,7 +622,32 @@ diveInputs.forEach(id => {
 // Strategy toggles auto-recalculate
 ['compareLinear','compareSCurve','compareExponential'].forEach(id => {
   const el = document.getElementById(id);
-  if (el) el.addEventListener('change', triggerRecalculation);
+  if (el) {
+    el.addEventListener('change', () => {
+      // Immediate visual update without recomputation
+      if (lastResult) {
+        // Ensure graph section is expanded so widths are correct
+        const ascentSection = document.querySelector('#graphContainer')?.closest('.graph-section');
+        if (ascentSection) ascentSection.classList.remove('collapsed');
+
+        const selectedStrategies = [
+          { id: 'compareLinear', label: 'Linear', key: 'linear' },
+          { id: 'compareSCurve', label: 'S-curve', key: 's-curve' },
+          { id: 'compareExponential', label: 'Exponential', key: 'exponential' }
+        ].filter(x => {
+          const el2 = document.getElementById(x.id);
+          return el2 && el2.checked;
+        });
+
+        // Re-render cards and graph with current selection
+        renderStrategyCards(lastResult);
+        createDiveProfileGraph(lastResult, selectedStrategies);
+      } else {
+        // Fallback: trigger full recalculation if no cached result yet
+        triggerRecalculation();
+      }
+    });
+  }
 });
 
 // Redistribute stop minutes across strategies while preserving totalDecoTime
