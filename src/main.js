@@ -660,68 +660,40 @@ diveInputs.forEach(id => {
 function renderTissueVisualization(result) {
   const container = document.getElementById('tissueVisualization');
   if (!container || !result.tissueSnapshots) return;
-  
-  const snapshots = result.tissueSnapshots;
+
+  const snapshots = result.tissueSnapshots || [];
+  const stopSnapshots = snapshots.filter(s => /^Stop/.test(s.phase));
+  const bottomSnapshot = snapshots.find(s => s.phase === 'Bottom');
+  const surfaceSnapshot = snapshots.find(s => /Surface/.test(s.phase));
+
   let html = '<div class="tissue-info">';
-  html += '<p class="small" style="margin-bottom: 1rem; color: var(--text-secondary);">Bühlmann ZH-L16C tissue compartment loading at key dive phases. Colors indicate saturation level relative to M-value limits.</p>';
+  html += '<p class="small" style="margin-bottom: 1rem; color: var(--text-secondary);">Bühlmann ZH-L16C tissue compartment loading. Each card shows all 16 compartments at that stop. Colors indicate saturation level relative to M-value limits.</p>';
   html += '</div>';
-  
-  // Display snapshots in a grid
-  html += '<div class="tissue-snapshots">';
-  
-  snapshots.forEach((snapshot, idx) => {
-    html += `<div class="tissue-snapshot">`;
-    html += `<h5>${snapshot.phase}</h5>`;
-    html += `<div class="snapshot-meta">Time: ${Math.ceil(snapshot.time)}min | Depth: ${snapshot.depth}m</div>`;
-    
-    // Get tissue data with saturation info
-    const tissueData = snapshot.tissues || [];
-    
-    // Find leading tissue
-    let maxSat = 0;
-    let leadingIdx = 0;
-    tissueData.forEach((td, i) => {
-      const saturation = (td.total / td.mValue) * 100;
-      if (saturation > maxSat) {
-        maxSat = saturation;
-        leadingIdx = i;
-      }
-    });
-    
-    html += '<div class="tissue-bars">';
-    tissueData.forEach((td, i) => {
-      const saturation = (td.total / td.mValue) * 100;
-      const isLeading = i === leadingIdx;
-      const satClass = saturation > 80 ? 'high' : saturation > 50 ? 'medium' : 'low';
-      const leadingClass = isLeading ? 'leading' : '';
-      
-      html += `<div class="tissue-bar-row ${leadingClass}">`;
-      html += `<div class="tissue-label"><span class="comp-num">${td.compartment}</span> ${td.label}</div>`;
-      html += `<div class="tissue-bar-container">`;
-      
-      // N2 bar
-      const n2Pct = (td.n2 / td.mValue) * 100;
-      html += `<div class="tissue-bar tissue-n2 sat-${satClass}" style="width: ${n2Pct}%" title="N₂: ${td.n2.toFixed(3)} bar"></div>`;
-      
-      // He bar (if present)
-      if (td.he > 0.01) {
-        const hePct = (td.he / td.mValue) * 100;
-        html += `<div class="tissue-bar tissue-he sat-${satClass}" style="width: ${hePct}%" title="He: ${td.he.toFixed(3)} bar"></div>`;
-      }
-      
-      html += '</div>';
-      html += `<div class="tissue-value">${saturation.toFixed(0)}%</div>`;
-      html += '</div>';
+
+  // Decompression stops grid
+  if (stopSnapshots.length > 0) {
+    html += '<h4 style="margin: 0 0 0.75rem 0;">Decompression Stops</h4>';
+    html += '<div class="tissue-snapshots">';
+    stopSnapshots.forEach(snapshot => {
+      html += renderTissueSnapshotCard(snapshot);
     });
     html += '</div>';
-    
-    html += `<div class="leading-tissue-info">Leading: Compartment ${leadingIdx + 1} (${TISSUE_LABELS[leadingIdx]}) at ${maxSat.toFixed(1)}%</div>`;
+  } else {
+    html += '<p class="small" style="margin-bottom: 1rem; color: var(--text-secondary);">No decompression stops for this plan.</p>';
+  }
+
+  // Key phases (optional): Bottom and Surface
+  const keyPhases = [bottomSnapshot, surfaceSnapshot].filter(Boolean);
+  if (keyPhases.length > 0) {
+    html += '<h4 style="margin: 1.5rem 0 0.75rem 0;">Key Phases</h4>';
+    html += '<div class="tissue-snapshots">';
+    keyPhases.forEach(snapshot => {
+      html += renderTissueSnapshotCard(snapshot);
+    });
     html += '</div>';
-  });
-  
-  html += '</div>';
-  
-  // Add legend
+  }
+
+  // Legend
   html += '<div class="tissue-legend">';
   html += '<div class="legend-item"><div class="legend-box tissue-n2"></div> Nitrogen (N₂)</div>';
   html += '<div class="legend-item"><div class="legend-box tissue-he"></div> Helium (He)</div>';
@@ -730,8 +702,54 @@ function renderTissueVisualization(result) {
   html += '<div class="legend-item"><div class="legend-box sat-medium"></div> Medium (50-80%)</div>';
   html += '<div class="legend-item"><div class="legend-box sat-high"></div> High (&gt;80%)</div>';
   html += '</div>';
-  
+
   container.innerHTML = html;
+}
+
+function renderTissueSnapshotCard(snapshot) {
+  let card = `<div class="tissue-snapshot">`;
+  card += `<h5>${snapshot.phase}</h5>`;
+  card += `<div class="snapshot-meta">Time: ${Math.ceil(snapshot.time)}min | Depth: ${snapshot.depth}m</div>`;
+
+  const tissueData = (snapshot.tissues || []).slice();
+  let maxSat = 0;
+  let leadingIdx = 0;
+  tissueData.forEach((td, i) => {
+    const saturation = (td.total / td.mValue) * 100;
+    if (saturation > maxSat) {
+      maxSat = saturation;
+      leadingIdx = i;
+    }
+  });
+
+  card += '<div class="tissue-bars">';
+  tissueData.forEach((td, i) => {
+    const saturation = (td.total / td.mValue) * 100;
+    const isLeading = i === leadingIdx;
+    const satClass = saturation > 80 ? 'high' : saturation > 50 ? 'medium' : 'low';
+    const leadingClass = isLeading ? 'leading' : '';
+
+    card += `<div class="tissue-bar-row ${leadingClass}">`;
+    card += `<div class="tissue-label"><span class="comp-num">${td.compartment}</span> ${td.label}</div>`;
+    card += `<div class="tissue-bar-container">`;
+
+    const n2Pct = (td.n2 / td.mValue) * 100;
+    card += `<div class="tissue-bar tissue-n2 sat-${satClass}" style="width: ${n2Pct}%" title="N₂: ${td.n2.toFixed(3)} bar"></div>`;
+
+    if (td.he > 0.01) {
+      const hePct = (td.he / td.mValue) * 100;
+      card += `<div class="tissue-bar tissue-he sat-${satClass}" style="width: ${hePct}%" title="He: ${td.he.toFixed(3)} bar"></div>`;
+    }
+
+    card += '</div>';
+    card += `<div class="tissue-value">${saturation.toFixed(0)}%</div>`;
+    card += '</div>';
+  });
+  card += '</div>';
+
+  card += `<div class="leading-tissue-info">Leading: Compartment ${leadingIdx + 1} (${TISSUE_LABELS[leadingIdx]}) at ${maxSat.toFixed(1)}%</div>`;
+  card += '</div>';
+  return card;
 }
 
 // Redistribute stop minutes across strategies while preserving totalDecoTime
