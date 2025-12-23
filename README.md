@@ -26,3 +26,8 @@ Development notes
 
 - All logic, styles and markup live in `index.html` (see the `<script>` block at bottom) unless modularized into `src/`.
 - The project currently uses ES modules under `src/` (see `src/sim.js`, `src/main.js`).
+
+
+## Changelog
+
+See CHANGELOG.md for release notes.
