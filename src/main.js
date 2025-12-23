@@ -374,7 +374,7 @@ function renderRows(result) {
 
   // Display detailed schedule
   const scheduleDiv = document.getElementById('detailedSchedule');
-  let html = '<h4>Detailed Dive Schedule</h4><table><thead><tr><th>Phase</th><th>Depth</th><th>Rate</th><th>Time (min)</th><th>Accumulated (min)</th></tr></thead><tbody>';
+  let html = '<h3>📝 Detailed Dive Schedule</h3><table><thead><tr><th>Phase</th><th>Depth</th><th>Rate</th><th>Time (min)</th><th>Accumulated (min)</th></tr></thead><tbody>';
   
   let currentGroup = 0;
   let inAscentSegment = false;
