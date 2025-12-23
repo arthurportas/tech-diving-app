@@ -11,6 +11,14 @@ function toggleGraph() {
   graphSection.classList.toggle('collapsed');
 }
 
+// Wire up collapse toggle on graph header
+document.addEventListener('DOMContentLoaded', () => {
+  const header = document.querySelector('.graph-header');
+  if (header) {
+    header.addEventListener('click', toggleGraph);
+  }
+});
+
 // Create D3.js dive profile visualization
 function createDiveProfileGraph(result) {
   const { rows, totalRuntime } = result;
