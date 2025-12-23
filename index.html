@@ -53,13 +53,16 @@
   <label id="gfHighLabel">GF High</label>
   <input id="gfHigh" type="number" step="1" value="85">
 
-  <label id="decoGasLabel">Deco Gas</label>
-  <select id="decoGasType">
-    <option value="same">Same as Bottom Gas</option>
-    <option value="ean">EAN</option>
-    <option value="o2">O₂</option>
-    <option value="ean+o2">EAN + O₂</option>
-  </select>
+  <label><input type="checkbox" id="noGasSwitch"> No gas switch (use bottom gas for entire dive)</label>
+
+  <div id="decoGasContainer">
+    <label id="decoGasLabel">Deco Gas</label>
+    <select id="decoGasType">
+      <option value="ean">EAN</option>
+      <option value="o2">O₂</option>
+      <option value="ean+o2">EAN + O₂</option>
+    </select>
+  </div>
 
   <div id="eanO2Container">
     <label>Deco Gas %</label>

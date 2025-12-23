@@ -27,13 +27,21 @@ const singleAscent = document.getElementById('singleAscent');
 const multiAscent = document.getElementById('multiAscent');
 
 function updateDecoUI() {
-  const type = decoGasTypeSelect.value;
-  eanO2Container.style.display = (type === 'o2' || type === 'same') ? 'none' : 'block';
-  o2ShallowContainer.style.display = (type === 'o2' || type === 'same') ? 'none' : 'block';
-  document.getElementById('useO2Shallow').checked = type === 'ean+o2';
+  const noSwitch = document.getElementById('noGasSwitch').checked;
+  const decoGasContainer = document.getElementById('decoGasContainer');
+  
+  decoGasContainer.style.display = noSwitch ? 'none' : 'block';
+  
+  if (!noSwitch) {
+    const type = decoGasTypeSelect.value;
+    eanO2Container.style.display = type === 'o2' ? 'none' : 'block';
+    o2ShallowContainer.style.display = type === 'o2' ? 'none' : 'block';
+    document.getElementById('useO2Shallow').checked = type === 'ean+o2';
+  }
 }
 
 decoGasTypeSelect.addEventListener('change', updateDecoUI);
+document.getElementById('noGasSwitch').addEventListener('change', updateDecoUI);
 updateDecoUI();
 
 function updateGasUI() {
@@ -128,7 +136,7 @@ settingsInputs.forEach(id => {
 
 // Add listeners to main dive parameters
 const diveInputs = [
-  'depth', 'time', 'gas', 'gfLow', 'gfHigh', 'decoGasType',
+  'depth', 'time', 'gas', 'gfLow', 'gfHigh', 'decoGasType', 'noGasSwitch',
   'decoO2', 'customO2', 'customTrimixO2', 'customHe', 'useO2Shallow', 'customType'
 ];
 diveInputs.forEach(id => {
@@ -217,8 +225,9 @@ btn.addEventListener('click', () => {
   const shallowAscentRate = Number(document.getElementById('shallowAscentRate').value) || 9;
   const lastStopDepth = Number(document.getElementById('lastStopDepth').value) || 6;
   const descentRate = Number(document.getElementById('descentRate').value) || 20;
+  const noGasSwitch = document.getElementById('noGasSwitch').checked;
 
-  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate, lastStopDepth, descentRate });
+  const rows = computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, noGasSwitch, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate, lastStopDepth, descentRate });
   renderRows(rows);
 });
 
