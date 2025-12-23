@@ -11,20 +11,14 @@ function toggleGraph() {
   graphSection.classList.toggle('collapsed');
 }
 
-// Wire up collapse toggle on graph header (module scripts run after DOM ready)
-const graphHeader = document.querySelector('.graph-header');
-if (graphHeader) {
-  graphHeader.addEventListener('click', toggleGraph);
-}
-
-// Wire up collapse toggle for full dive profile graph
-const fullGraphHeaders = document.querySelectorAll('.graph-header');
-if (fullGraphHeaders.length > 1) {
-  fullGraphHeaders[1].addEventListener('click', function() {
+// Wire up collapse toggle on graph headers (module scripts run after DOM ready)
+const graphHeaders = document.querySelectorAll('.graph-header');
+graphHeaders.forEach(header => {
+  header.addEventListener('click', function() {
     const graphSection = this.closest('.graph-section');
     graphSection.classList.toggle('collapsed');
   });
-}
+});
 
 // Create D3.js dive profile visualization
 function createDiveProfileGraph(result) {
