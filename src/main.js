@@ -38,55 +38,54 @@ document.querySelectorAll('.graph-header').forEach(header => {
 });
 
 // Create D3.js dive profile visualization
-function createDiveProfileGraph(result) {
-  const { rows, totalRuntime } = result;
+function createDiveProfileGraph(result, strategies = []) {
+  const { rows, totalRuntime, totalDecoTime } = result;
   const depth = Number(depthInput.value) || 0;
   const time = Number(timeInput.value) || 0;
   
   if (!depth || !time) return;
 
-  // Build data points for the line
-  const data = [];
-  let currentTime = time; // Start at end of bottom time
+  // Helper to build data points for a given stop schedule
+  const buildData = (stopRows) => {
+    const data = [];
+    let currentTime = time;
+    data.push({ time: currentTime, depth: depth, phase: 'bottom', stopTime: 0, accumulated: time });
+    let previousDepth = depth;
+    let lastAccumulated = time;
+    
+    stopRows.forEach((row, idx) => {
+      const stopDepth = row.depth;
+      const stopTime = row.mins;
+      const depthDifference = previousDepth - stopDepth;
+      const ascentRate = 10;
+      const ascentTime = depthDifference / ascentRate;
+      currentTime += ascentTime;
+      lastAccumulated += ascentTime;
+      if (idx === 0 || previousDepth !== stopDepth) {
+        data.push({ time: currentTime, depth: stopDepth, phase: 'ascent-end', stopTime: 0, accumulated: Math.ceil(lastAccumulated) });
+      }
+      currentTime += stopTime;
+      lastAccumulated += stopTime;
+      data.push({ time: currentTime, depth: stopDepth, phase: 'stop', stopTime: stopTime, accumulated: Math.ceil(lastAccumulated) });
+      previousDepth = stopDepth;
+    });
+    const finalAscentTime = previousDepth / 10;
+    currentTime += finalAscentTime;
+    lastAccumulated += finalAscentTime;
+    data.push({ time: currentTime, depth: 0, phase: 'surface', stopTime: 0, accumulated: Math.ceil(lastAccumulated) });
+    return data;
+  };
+
+  // Build baseline data
+  const data = buildData(rows);
   
-  // Add bottom point
-  data.push({ time: currentTime, depth: depth, phase: 'bottom', stopTime: 0, accumulated: time });
-  
-  // Parse rows to extract decompression stops
-  let previousDepth = depth;
-  let lastAccumulated = time;
-  
-  rows.forEach((row, idx) => {
-    const stopDepth = row.depth;
-    const stopTime = row.mins;
-    
-    // Time for ascent from previous depth to this depth
-    // Estimate using average ascent rate
-    const depthDifference = previousDepth - stopDepth;
-    const ascentRate = 10; // Default ascent rate
-    const ascentTime = depthDifference / ascentRate;
-    
-    currentTime += ascentTime;
-    lastAccumulated += ascentTime;
-    
-    // Add ascent endpoint
-    if (idx === 0 || previousDepth !== stopDepth) {
-      data.push({ time: currentTime, depth: stopDepth, phase: 'ascent-end', stopTime: 0, accumulated: Math.ceil(lastAccumulated) });
-    }
-    
-    // Add stop
-    currentTime += stopTime;
-    lastAccumulated += stopTime;
-    data.push({ time: currentTime, depth: stopDepth, phase: 'stop', stopTime: stopTime, accumulated: Math.ceil(lastAccumulated) });
-    
-    previousDepth = stopDepth;
-  });
-  
-  // Add final ascent to surface
-  const finalAscentTime = previousDepth / 10;
-  currentTime += finalAscentTime;
-  lastAccumulated += finalAscentTime;
-  data.push({ time: currentTime, depth: 0, phase: 'surface', stopTime: 0, accumulated: Math.ceil(lastAccumulated) });
+  // Build data for each selected strategy
+  const strategyColors = { linear: '#10b981', 's-curve': '#f59e0b', exponential: '#ef4444' };
+  const strategyData = strategies.map(s => ({
+    label: s.label,
+    color: strategyColors[s.key] || '#cbd5e1',
+    data: buildData(redistributeStops(rows, totalDecoTime, s.key))
+  }));
   
   // D3 dimensions
   const margin = { top: 30, right: 40, bottom: 50, left: 60 };
@@ -330,6 +329,18 @@ function createFullDiveProfileGraph(result) {
     .attr('class', 'd3-profile-line')
     .attr('d', line);
   
+  // Draw strategy profile lines
+  strategyData.forEach(s => {
+    svg.append('path')
+      .datum(s.data)
+      .attr('class', 'd3-strategy-line')
+      .attr('d', line)
+      .style('stroke', s.color)
+      .style('stroke-width', '2')
+      .style('stroke-dasharray', '4,4')
+      .style('fill', 'none');
+  });
+  
   // Add feather lines from stops to surface
   data.forEach(d => {
     if (d.phase === 'stop' && d.depth > 0) {
@@ -355,6 +366,46 @@ function createFullDiveProfileGraph(result) {
       showTooltip(event, d);
     })
     .on('mouseout', hideTooltip);
+  
+  // Add legend if strategies present
+  if (strategyData.length > 0) {
+    const legendY = 10;
+    const legendX = width - 150;
+    
+    // Baseline legend entry
+    svg.append('line')
+      .attr('x1', legendX)
+      .attr('x2', legendX + 30)
+      .attr('y1', legendY)
+      .attr('y2', legendY)
+      .attr('stroke', 'var(--accent-cyan)')
+      .attr('stroke-width', '2.5');
+    svg.append('text')
+      .attr('x', legendX + 35)
+      .attr('y', legendY + 4)
+      .attr('fill', 'var(--text-secondary)')
+      .attr('font-size', '0.85rem')
+      .text('Baseline');
+    
+    // Strategy legend entries
+    strategyData.forEach((s, i) => {
+      const y = legendY + (i + 1) * 20;
+      svg.append('line')
+        .attr('x1', legendX)
+        .attr('x2', legendX + 30)
+        .attr('y1', y)
+        .attr('y2', y)
+        .attr('stroke', s.color)
+        .attr('stroke-width', '2')
+        .attr('stroke-dasharray', '4,4');
+      svg.append('text')
+        .attr('x', legendX + 35)
+        .attr('y', y + 4)
+        .attr('fill', 'var(--text-secondary)')
+        .attr('font-size', '0.85rem')
+        .text(s.label);
+    });
+  }
 }
 
 // Tooltip functions
@@ -659,7 +710,15 @@ function renderRows(result) {
   document.getElementById('totalRuntime').innerHTML = `Total Dive Runtime: ${totalRuntime} minutes<br>Total Decompression Time: ${totalDecoTime} minutes`;
 
   // Create dive profile graph
-  createDiveProfileGraph(result);
+  const selectedStrategies = [
+    { id: 'compareLinear', label: 'Linear', key: 'linear' },
+    { id: 'compareSCurve', label: 'S-curve', key: 's-curve' },
+    { id: 'compareExponential', label: 'Exponential', key: 'exponential' }
+  ].filter(x => {
+    const el = document.getElementById(x.id);
+    return el && el.checked;
+  });
+  createDiveProfileGraph(result, selectedStrategies);
   
   // Create full dive schedule profile graph
   createFullDiveProfileGraph(result);
