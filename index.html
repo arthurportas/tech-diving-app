@@ -10,110 +10,156 @@
 
 <body>
 
-<h1>Bühlmann ZH-L16C Decompression Planner</h1>
+<div class="container">
+  <header>
+    <h1>Bühlmann ZH-L16C Decompression Planner</h1>
+    <p>Calculate safe decompression stops with advanced tissue modeling</p>
+  </header>
 
-<div class="panel">
-  <label id="depthLabel">Max Depth (m)</label>
-  <input id="depth" type="number" value="60">
-
-  <label id="timeLabel">Bottom Time (min)</label>
-  <input id="time" type="number" value="20">
-
-  <label>Bottom Gas</label>
-  <select id="gas">
-    <option value="18/45">Trimix 18/45</option>
-    <option value="21/35">Trimix 21/35</option>
-    <option value="28">Nitrox 28</option>
-    <option value="32">Nitrox 32</option>
-    <option value="air">Air</option>
-    <option value="custom">Custom</option>
-  </select>
-
-  <div id="customGasContainer" style="display: none;">
-    <label>Gas Type</label>
-    <select id="customType">
-      <option value="nitrox">Nitrox</option>
-      <option value="trimix">Trimix</option>
-    </select>
-    <div id="nitroxInputs">
-      <label>O₂ %</label>
-      <input id="customO2" type="number" min="21" max="100" step="1" value="32">
+  <!-- Input Panel -->
+  <div class="panel">
+    <!-- Dive Parameters Section -->
+    <div class="section-group">
+      <div class="section-title">⛵ Dive Profile</div>
+      <div class="input-grid">
+        <div class="input-group">
+          <label id="depthLabel">Max Depth (m)</label>
+          <input id="depth" type="number" value="60">
+        </div>
+        <div class="input-group">
+          <label id="timeLabel">Bottom Time (min)</label>
+          <input id="time" type="number" value="20">
+        </div>
+      </div>
     </div>
-    <div id="trimixInputs" style="display: none;">
-      <label>O₂ %</label>
-      <input id="customTrimixO2" type="number" min="10" max="50" step="1" value="18">
-      <label>He %</label>
-      <input id="customHe" type="number" min="0" max="80" step="1" value="45">
+
+    <!-- Gas Configuration Section -->
+    <div class="section-group">
+      <div class="section-title">⛽ Gas Configuration</div>
+      <div class="input-grid">
+        <div class="input-group">
+          <label>Bottom Gas</label>
+          <select id="gas">
+            <option value="18/45">Trimix 18/45</option>
+            <option value="21/35">Trimix 21/35</option>
+            <option value="28">Nitrox 28</option>
+            <option value="32">Nitrox 32</option>
+            <option value="air">Air</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="customGasContainer" style="display: none;">
+        <label>Gas Type</label>
+        <select id="customType">
+          <option value="nitrox">Nitrox</option>
+          <option value="trimix">Trimix</option>
+        </select>
+        <div id="nitroxInputs">
+          <label>O₂ %</label>
+          <input id="customO2" type="number" min="21" max="100" step="1" value="32">
+        </div>
+        <div id="trimixInputs" style="display: none;">
+          <label>O₂ %</label>
+          <input id="customTrimixO2" type="number" min="10" max="50" step="1" value="18">
+          <label>He %</label>
+          <input id="customHe" type="number" min="0" max="80" step="1" value="45">
+        </div>
+      </div>
+
+      <label class="checkbox-label" style="margin-top: 1rem;">
+        <input type="checkbox" id="noGasSwitch">
+        No gas switch (use bottom gas for entire dive)
+      </label>
+
+      <div id="decoGasContainer">
+        <label id="decoGasLabel">Deco Gas</label>
+        <select id="decoGasType">
+          <option value="ean">EAN</option>
+          <option value="o2">O₂</option>
+          <option value="ean+o2">EAN + O₂</option>
+        </select>
+
+        <div id="eanO2Container">
+          <label>Deco Gas %</label>
+          <input id="decoO2" type="number" min="21" max="100" step="1" value="50">
+        </div>
+
+        <div id="o2ShallowContainer" style="display: none;">
+          <label class="checkbox-label">
+            <input type="checkbox" id="useO2Shallow" checked>
+            Use pure O₂ for shallow stops (6m and shallower)
+          </label>
+        </div>
+      </div>
     </div>
+
+    <!-- Decompression Settings Section -->
+    <div class="section-group">
+      <div class="section-title">📊 Decompression Settings</div>
+      <div class="input-grid">
+        <div class="input-group">
+          <label id="gfLowLabel">GF Low</label>
+          <input id="gfLow" type="number" step="1" value="30">
+        </div>
+        <div class="input-group">
+          <label id="gfHighLabel">GF High</label>
+          <input id="gfHigh" type="number" step="1" value="85">
+        </div>
+      </div>
+    </div>
+
+    <button id="planBtn">Plan Dive</button>
   </div>
 
-  <label id="gfLowLabel">GF Low</label>
-  <input id="gfLow" type="number" step="1" value="30">
-
-  <label id="gfHighLabel">GF High</label>
-  <input id="gfHigh" type="number" step="1" value="85">
-
-  <label><input type="checkbox" id="noGasSwitch"> No gas switch (use bottom gas for entire dive)</label>
-
-  <div id="decoGasContainer">
-    <label id="decoGasLabel">Deco Gas</label>
-    <select id="decoGasType">
-      <option value="ean">EAN</option>
-      <option value="o2">O₂</option>
-      <option value="ean+o2">EAN + O₂</option>
-    </select>
+  <!-- Results Panel -->
+  <div class="panel">
+    <h3>📋 Decompression Schedule</h3>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th id="depthHeader">Depth (m)</th>
+            <th>Time (min)</th>
+            <th>Gas</th>
+          </tr>
+        </thead>
+        <tbody id="output"></tbody>
+      </table>
+    </div>
+    <div id="totalRuntime" class="total-runtime"></div>
+    <div id="detailedSchedule" class="detailed-schedule"></div>
+    <p class="small">⚠️ Educational use only. Not for real dive planning.</p>
   </div>
-
-  <div id="eanO2Container">
-    <label>Deco Gas %</label>
-    <input id="decoO2" type="number" min="21" max="100" step="1" value="50">
-  </div>
-
-  <div id="o2ShallowContainer" style="display: none;">
-    <label><input type="checkbox" id="useO2Shallow" checked> Use pure O₂ for shallow stops (6m and shallower)</label>
-  </div>
-
-  <button id="planBtn">Plan Dive</button>
 </div>
 
-<button id="settingsBtn">⚙️ Settings</button>
+<!-- Floating Settings Button -->
+<button id="settingsBtn">⚙️</button>
 
-<div class="panel">
-  <h3>Decompression Schedule</h3>
-  <table>
-    <thead>
-      <tr>
-        <th id="depthHeader">Depth (m)</th>
-        <th>Time (min)</th>
-        <th>Gas</th>
-      </tr>
-    </thead>
-    <tbody id="output"></tbody>
-  </table>
-  <div id="totalRuntime" class="total-runtime"></div>
-  <div id="detailedSchedule" class="detailed-schedule"></div>
-  <p class="small">Educational use only. Not for real dive planning.</p>
-</div>
-</div>
-
-<script type="module" src="src/main.js"></script>
+<!-- Settings Panel -->
 <div id="settingsPanel" class="settings-panel">
   <div class="settings-content">
+    <button id="closeSettings">✕</button>
     <h4>Dive Planning Settings</h4>
+
     <label>Units</label>
     <select id="units">
       <option value="metric">Metric</option>
       <option value="imperial">Imperial</option>
     </select>
+
     <label id="ascentModeLabel">Ascent Rate Mode</label>
     <select id="ascentMode">
       <option value="single">Single Rate</option>
       <option value="multi">Multiple Rates</option>
     </select>
+
     <div id="singleAscent">
       <label id="ascentRateLabel">Ascent Rate (m/min)</label>
       <input id="ascentRate" type="number" value="10">
     </div>
+
     <div id="multiAscent" style="display: none;">
       <label id="deepAscentRateLabel">Deep Ascent Rate (m/min)</label>
       <input id="deepAscentRate" type="number" value="6">
@@ -122,16 +168,19 @@
       <label id="shallowAscentRateLabel">Shallow Ascent Rate (m/min)</label>
       <input id="shallowAscentRate" type="number" value="9">
     </div>
+
     <label id="lastStopDepthLabel">Last Stop Depth (m)</label>
     <select id="lastStopDepth">
       <option value="3">3</option>
       <option value="6" selected>6</option>
     </select>
+
     <label id="descentRateLabel">Descent Rate (m/min)</label>
     <input id="descentRate" type="number" min="1" max="50" step="1" value="20">
-    <button id="closeSettings">Close</button>
   </div>
 </div>
+
+<script type="module" src="src/main.js"></script>
 
 </body>
 </html>
