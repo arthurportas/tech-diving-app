@@ -662,7 +662,7 @@ function renderTissueVisualization(result) {
   if (!container || !result.tissueSnapshots) return;
 
   const snapshots = result.tissueSnapshots || [];
-  const stopSnapshots = snapshots.filter(s => /^Stop/.test(s.phase));
+  const stopSnapshots = (snapshots.filter(s => /^Stop/.test(s.phase)) || []).slice().sort((a, b) => b.depth - a.depth);
   const bottomSnapshot = snapshots.find(s => s.phase === 'Bottom');
   const surfaceSnapshot = snapshots.find(s => /Surface/.test(s.phase));
 

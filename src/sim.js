@@ -302,6 +302,21 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
         time: mins,
         accumulated: Math.ceil(accumulated)
       });
+
+      // Capture tissue state at this final stop as well
+      tissueSnapshots.push({
+        phase: `Stop @ ${d}m`,
+        depth: d,
+        time: Math.ceil(accumulated),
+        tissues: tissues.map((t, i) => ({
+          n2: t.n2,
+          he: t.he,
+          total: t.n2 + t.he,
+          mValue: calculateMValue(t, d, first, gfLow, gfHigh, i),
+          compartment: i + 1,
+          label: TISSUE_LABELS[i]
+        }))
+      });
       
       previousStopDepth = d;
     }
