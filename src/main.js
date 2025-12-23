@@ -85,7 +85,7 @@ function createDiveProfileGraph(result) {
   
   // Scales
   const xScale = d3.scaleLinear()
-    .domain([0, d3.max(data, d => d.time)])
+    .domain([0, d3.max(data, d => d.time) + 10])
     .range([0, width]);
   
   const yScale = d3.scaleLinear()
