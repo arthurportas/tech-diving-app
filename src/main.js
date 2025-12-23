@@ -17,6 +17,15 @@ if (graphHeader) {
   graphHeader.addEventListener('click', toggleGraph);
 }
 
+// Wire up collapse toggle for full dive profile graph
+const fullGraphHeaders = document.querySelectorAll('.graph-header');
+if (fullGraphHeaders.length > 1) {
+  fullGraphHeaders[1].addEventListener('click', function() {
+    const graphSection = this.closest('.graph-section');
+    graphSection.classList.toggle('collapsed');
+  });
+}
+
 // Create D3.js dive profile visualization
 function createDiveProfileGraph(result) {
   const { rows, totalRuntime } = result;
@@ -135,6 +144,168 @@ function createDiveProfileGraph(result) {
     .attr('y', height + margin.bottom - 10)
     .style('text-anchor', 'middle')
     .text('Dive Time (min)');
+  
+  // Line generator
+  const line = d3.line()
+    .x(d => xScale(d.time))
+    .y(d => yScale(d.depth));
+  
+  // Draw profile line
+  svg.append('path')
+    .datum(data)
+    .attr('class', 'd3-profile-line')
+    .attr('d', line);
+  
+  // Add feather lines from stops to surface
+  data.forEach(d => {
+    if (d.phase === 'stop' && d.depth > 0) {
+      svg.append('line')
+        .attr('class', 'd3-feather-line')
+        .attr('x1', xScale(d.time))
+        .attr('x2', xScale(d.time))
+        .attr('y1', yScale(d.depth))
+        .attr('y2', yScale(0));
+    }
+  });
+  
+  // Add stop points
+  svg.selectAll('.d3-stop-point')
+    .data(data.filter(d => d.phase === 'stop'))
+    .enter()
+    .append('circle')
+    .attr('class', 'd3-stop-point')
+    .attr('cx', d => xScale(d.time))
+    .attr('cy', d => yScale(d.depth))
+    .attr('r', 4)
+    .on('mouseover', function(event, d) {
+      showTooltip(event, d);
+    })
+    .on('mouseout', hideTooltip);
+}
+
+// Create full dive schedule profile graph (including descent and bottom time)
+function createFullDiveProfileGraph(result) {
+  const { rows, schedule } = result;
+  const depth = Number(depthInput.value) || 0;
+  const time = Number(timeInput.value) || 0;
+  const descentRate = Number(document.getElementById('descentRate').value) || 20;
+  
+  if (!depth || !time) return;
+
+  // Build data points for complete dive profile
+  const data = [];
+  let currentTime = 0;
+  
+  // Add surface start
+  data.push({ time: 0, depth: 0, phase: 'surface-start', stopTime: 0, accumulated: 0 });
+  
+  // Add descent
+  const descentTime = depth / descentRate;
+  currentTime = descentTime;
+  data.push({ time: currentTime, depth: depth, phase: 'descent', stopTime: 0, accumulated: Math.ceil(currentTime) });
+  
+  // Add bottom time
+  currentTime += time;
+  data.push({ time: currentTime, depth: depth, phase: 'bottom', stopTime: time, accumulated: Math.ceil(currentTime) });
+  
+  // Parse schedule for ascent and stops
+  let previousDepth = depth;
+  
+  rows.forEach((row, idx) => {
+    const stopDepth = row.depth;
+    const stopTime = row.mins;
+    
+    // Time for ascent from previous depth to this depth
+    const depthDifference = previousDepth - stopDepth;
+    const ascentRate = 10; // Default ascent rate
+    const ascentTime = depthDifference / ascentRate;
+    
+    currentTime += ascentTime;
+    
+    // Add ascent endpoint
+    if (idx === 0 || previousDepth !== stopDepth) {
+      data.push({ time: currentTime, depth: stopDepth, phase: 'ascent-end', stopTime: 0, accumulated: Math.ceil(currentTime) });
+    }
+    
+    // Add stop
+    currentTime += stopTime;
+    data.push({ time: currentTime, depth: stopDepth, phase: 'stop', stopTime: stopTime, accumulated: Math.ceil(currentTime) });
+    
+    previousDepth = stopDepth;
+  });
+  
+  // Add final ascent to surface
+  const finalAscentTime = previousDepth / 10;
+  currentTime += finalAscentTime;
+  data.push({ time: currentTime, depth: 0, phase: 'surface', stopTime: 0, accumulated: Math.ceil(currentTime) });
+  
+  // D3 dimensions
+  const margin = { top: 30, right: 40, bottom: 50, left: 60 };
+  const svgElement = document.getElementById('fullDiveProfileChart');
+  const width = svgElement.clientWidth - margin.left - margin.right;
+  const height = svgElement.clientHeight - margin.top - margin.bottom;
+  
+  // Clear previous chart
+  d3.select(svgElement).selectAll("*").remove();
+  
+  const svg = d3.select(svgElement)
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom)
+    .append('g')
+    .attr('transform', `translate(${margin.left},${margin.top})`);
+  
+  // Scales
+  const xScale = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.time) + 10])
+    .range([0, width]);
+  
+  const yScale = d3.scaleLinear()
+    .domain([0, depth]) // Surface (0) to max depth
+    .range([0, height]);
+  
+  // Axes
+  const xAxis = d3.axisBottom(xScale).ticks(8);
+  const yAxis = d3.axisLeft(yScale).ticks(Math.ceil(depth / 5)).tickFormat(d => Math.round(d));
+  
+  // Grid lines for Y-axis (every 5m)
+  svg.selectAll('.d3-grid-line')
+    .data(d3.range(0, depth + 1, 5))
+    .enter()
+    .append('line')
+    .attr('class', 'd3-grid-line')
+    .attr('x1', 0)
+    .attr('x2', width)
+    .attr('y1', d => yScale(d))
+    .attr('y2', d => yScale(d));
+  
+  // Add Y-axis
+  svg.append('g')
+    .attr('class', 'd3-axis')
+    .call(yAxis);
+  
+  // Add X-axis
+  svg.append('g')
+    .attr('class', 'd3-axis')
+    .attr('transform', `translate(0,${height})`)
+    .call(xAxis);
+  
+  // Y-axis label
+  svg.append('text')
+    .attr('class', 'd3-axis-label')
+    .attr('transform', 'rotate(-90)')
+    .attr('y', 0 - margin.left + 15)
+    .attr('x', 0 - (height / 2))
+    .attr('dy', '1em')
+    .style('text-anchor', 'middle')
+    .text('Depth (m)');
+  
+  // X-axis label
+  svg.append('text')
+    .attr('class', 'd3-axis-label')
+    .attr('x', width / 2)
+    .attr('y', height + margin.bottom - 10)
+    .style('text-anchor', 'middle')
+    .text('Total Dive Time (min)');
   
   // Line generator
   const line = d3.line()
@@ -371,6 +542,9 @@ function renderRows(result) {
 
   // Create dive profile graph
   createDiveProfileGraph(result);
+  
+  // Create full dive schedule profile graph
+  createFullDiveProfileGraph(result);
 
   // Display detailed schedule
   const scheduleDiv = document.getElementById('detailedSchedule');
