@@ -6,17 +6,18 @@ function mToFt(m) { return m * M_TO_FT; }
 function ftToM(ft) { return ft / M_TO_FT; }
 
 // Toggle graph collapse/expand
-function toggleGraph() {
-  const graphSection = document.querySelector('.graph-section');
-  graphSection.classList.toggle('collapsed');
+function toggleGraph(section) {
+  const graphSection = section || document.querySelector('.graph-section');
+  if (graphSection) {
+    graphSection.classList.toggle('collapsed');
+  }
 }
 
-// Wire up collapse toggle on graph headers (module scripts run after DOM ready)
-const graphHeaders = document.querySelectorAll('.graph-header');
-graphHeaders.forEach(header => {
+// Wire up collapse toggle on graph headers
+document.querySelectorAll('.graph-header').forEach(header => {
   header.addEventListener('click', function() {
     const graphSection = this.closest('.graph-section');
-    graphSection.classList.toggle('collapsed');
+    toggleGraph(graphSection);
   });
 });
 
