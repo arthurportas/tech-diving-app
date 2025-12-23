@@ -776,3 +776,306 @@ input[id="depth"] {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-cyan);
 }
+/* Tissue Compartment Section */
+.tissue-section {
+  margin-top: 4rem;
+  padding: 2rem;
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.tissue-section .section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.tissue-intro {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.7;
+  padding: 1rem;
+  background: var(--bg-dark);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 4px;
+}
+
+.phase-selector {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--bg-dark);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.phase-selector label {
+  margin-bottom: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.phase-selector select {
+  flex: 1;
+  max-width: 400px;
+  padding: 0.75rem;
+  background: var(--surface-light);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.phase-selector select:hover {
+  border-color: var(--secondary-blue);
+}
+
+.phase-selector select:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+}
+
+.tissue-disclaimer {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.tissue-disclaimer strong {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.placeholder-content {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.placeholder-content p {
+  margin: 0;
+}
+
+/* Tissue bar chart specific styles */
+#tissueBarChart .n2-bar,
+#tissueBarChart .he-bar,
+#tissueBarChart .m-value-bar {
+  transition: opacity 0.2s ease;
+}
+
+#tissueBarChart .n2-bar:hover,
+#tissueBarChart .he-bar:hover {
+  opacity: 0.8;
+}
+
+#tissueBarChart .tissue-value {
+  pointer-events: none;
+}
+/* Tissue Visualization Section */
+.tissue-visualization {
+  padding: 1rem;
+}
+
+.tissue-info {
+  margin-bottom: 2rem;
+}
+
+.tissue-snapshots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.tissue-snapshot {
+  background: var(--bg-dark);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.tissue-snapshot h5 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  margin-bottom: 0.5rem;
+}
+
+.snapshot-meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tissue-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tissue-bar-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 60px;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.4rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.tissue-bar-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tissue-bar-row.leading {
+  background: rgba(251, 191, 36, 0.1);
+  border-left: 3px solid #fbbf24;
+}
+
+.tissue-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.comp-num {
+  display: inline-block;
+  min-width: 1.5rem;
+  text-align: center;
+  background: var(--surface-light);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+.tissue-bar-container {
+  position: relative;
+  height: 20px;
+  background: var(--surface-light);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+}
+
+.tissue-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.tissue-bar.tissue-n2 {
+  background: linear-gradient(90deg, var(--secondary-blue), var(--accent-cyan));
+  opacity: 0.9;
+}
+
+.tissue-bar.tissue-he {
+  background: linear-gradient(90deg, #8b5cf6, #6366f1);
+  opacity: 0.7;
+}
+
+.tissue-bar.sat-low {
+  filter: hue-rotate(80deg);
+}
+
+.tissue-bar.sat-medium {
+  filter: hue-rotate(0deg);
+}
+
+.tissue-bar.sat-high {
+  filter: hue-rotate(-60deg);
+  opacity: 1;
+}
+
+.tissue-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.leading-tissue-info {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(251, 191, 36, 0.1);
+  border-left: 3px solid #fbbf24;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.tissue-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--bg-dark);
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.legend-box {
+  width: 24px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.legend-box.tissue-n2 {
+  background: linear-gradient(90deg, var(--secondary-blue), var(--accent-cyan));
+}
+
+.legend-box.tissue-he {
+  background: linear-gradient(90deg, #8b5cf6, #6366f1);
+  opacity: 0.7;
+}
+
+.legend-box.sat-low {
+  background: var(--success);
+}
+
+.legend-box.sat-medium {
+  background: var(--secondary-blue);
+}
+
+.legend-box.sat-high {
+  background: var(--warning);
+}
+
+.legend-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+}

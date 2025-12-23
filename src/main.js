@@ -1,4 +1,4 @@
-import { computeDecompressionSchedule } from './sim.js';
+import { computeDecompressionSchedule, TISSUE_LABELS, ZHL16C } from './sim.js';
 
 // Keep last computed result to allow graph re-render on expand
 let lastResult = null;
@@ -656,6 +656,84 @@ diveInputs.forEach(id => {
   }
 });
 
+// Render tissue compartment visualization
+function renderTissueVisualization(result) {
+  const container = document.getElementById('tissueVisualization');
+  if (!container || !result.tissueSnapshots) return;
+  
+  const snapshots = result.tissueSnapshots;
+  let html = '<div class="tissue-info">';
+  html += '<p class="small" style="margin-bottom: 1rem; color: var(--text-secondary);">Bühlmann ZH-L16C tissue compartment loading at key dive phases. Colors indicate saturation level relative to M-value limits.</p>';
+  html += '</div>';
+  
+  // Display snapshots in a grid
+  html += '<div class="tissue-snapshots">';
+  
+  snapshots.forEach((snapshot, idx) => {
+    html += `<div class="tissue-snapshot">`;
+    html += `<h5>${snapshot.phase}</h5>`;
+    html += `<div class="snapshot-meta">Time: ${Math.ceil(snapshot.time)}min | Depth: ${snapshot.depth}m</div>`;
+    
+    // Get tissue data with saturation info
+    const tissueData = snapshot.tissues || [];
+    
+    // Find leading tissue
+    let maxSat = 0;
+    let leadingIdx = 0;
+    tissueData.forEach((td, i) => {
+      const saturation = (td.total / td.mValue) * 100;
+      if (saturation > maxSat) {
+        maxSat = saturation;
+        leadingIdx = i;
+      }
+    });
+    
+    html += '<div class="tissue-bars">';
+    tissueData.forEach((td, i) => {
+      const saturation = (td.total / td.mValue) * 100;
+      const isLeading = i === leadingIdx;
+      const satClass = saturation > 80 ? 'high' : saturation > 50 ? 'medium' : 'low';
+      const leadingClass = isLeading ? 'leading' : '';
+      
+      html += `<div class="tissue-bar-row ${leadingClass}">`;
+      html += `<div class="tissue-label"><span class="comp-num">${td.compartment}</span> ${td.label}</div>`;
+      html += `<div class="tissue-bar-container">`;
+      
+      // N2 bar
+      const n2Pct = (td.n2 / td.mValue) * 100;
+      html += `<div class="tissue-bar tissue-n2 sat-${satClass}" style="width: ${n2Pct}%" title="N₂: ${td.n2.toFixed(3)} bar"></div>`;
+      
+      // He bar (if present)
+      if (td.he > 0.01) {
+        const hePct = (td.he / td.mValue) * 100;
+        html += `<div class="tissue-bar tissue-he sat-${satClass}" style="width: ${hePct}%" title="He: ${td.he.toFixed(3)} bar"></div>`;
+      }
+      
+      html += '</div>';
+      html += `<div class="tissue-value">${saturation.toFixed(0)}%</div>`;
+      html += '</div>';
+    });
+    html += '</div>';
+    
+    html += `<div class="leading-tissue-info">Leading: Compartment ${leadingIdx + 1} (${TISSUE_LABELS[leadingIdx]}) at ${maxSat.toFixed(1)}%</div>`;
+    html += '</div>';
+  });
+  
+  html += '</div>';
+  
+  // Add legend
+  html += '<div class="tissue-legend">';
+  html += '<div class="legend-item"><div class="legend-box tissue-n2"></div> Nitrogen (N₂)</div>';
+  html += '<div class="legend-item"><div class="legend-box tissue-he"></div> Helium (He)</div>';
+  html += '<div class="legend-separator"></div>';
+  html += '<div class="legend-item"><div class="legend-box sat-low"></div> Low (&lt;50%)</div>';
+  html += '<div class="legend-item"><div class="legend-box sat-medium"></div> Medium (50-80%)</div>';
+  html += '<div class="legend-item"><div class="legend-box sat-high"></div> High (&gt;80%)</div>';
+  html += '</div>';
+  
+  container.innerHTML = html;
+}
+
 // Redistribute stop minutes across strategies while preserving totalDecoTime
 function redistributeStops(rows, totalDecoTime, strategy) {
   if (!rows || rows.length === 0) return [];
@@ -734,8 +812,9 @@ function renderStrategyCards(result) {
   });
 }
 
+// Render tissue compartment visualization
 function renderRows(result) {
-  const { rows, totalRuntime, totalDecoTime, schedule } = result;
+  const { rows, totalRuntime, totalDecoTime, schedule, tissueSnapshots } = result;
   // cache for later re-render on expand
   lastResult = result;
   const units = document.getElementById('units').value;
@@ -764,6 +843,9 @@ function renderRows(result) {
 
   // Render strategy comparison cards
   renderStrategyCards(result);
+  
+  // Render tissue compartment visualization
+  renderTissueVisualization(result);
 
   // Display detailed schedule
   const scheduleDiv = document.getElementById('detailedSchedule');

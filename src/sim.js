@@ -1,6 +1,13 @@
 /* Pure simulation functions for ZH-L16C decompression planner
    This module is DOM-free and returns schedule rows for rendering.
 */
+export const TISSUE_LABELS = [
+  'Blood/Lung', 'Brain', 'Spinal Cord', 'Muscle (fast)',
+  'Muscle', 'Muscle (med)', 'Muscle (slow)', 'Fat (fast)',
+  'Fat', 'Fat (med)', 'Fat (slow)', 'Cartilage (fast)',
+  'Cartilage', 'Bone Marrow', 'Bone', 'Bone (slow)'
+];
+
 export const ZHL16C = [
   { tN2:4,   tHe:1.51, aN2:1.2599, bN2:0.5050, aHe:1.7424, bHe:0.4245 },
   { tN2:8,   tHe:3.02, aN2:1.1696, bN2:0.6514, aHe:1.6189, bHe:0.4770 },
@@ -55,6 +62,18 @@ function ceilingDepth(tissues, depth, first, gfLow, gfHigh) {
   return (maxBar - 1) * 10;
 }
 
+// Calculate M-value (maximum tolerated tissue pressure) for a compartment
+function calculateMValue(tissue, depth, first, gfLow, gfHigh, compIndex) {
+  const c = ZHL16C[compIndex];
+  const pt = tissue.n2 + tissue.he;
+  if (pt === 0) return 0;
+  const a = (c.aN2 * tissue.n2 + c.aHe * tissue.he) / pt;
+  const b = (c.bN2 * tissue.n2 + c.bHe * tissue.he) / pt;
+  const pamb = (pt - a) / b;
+  const gfValue = gf(depth, first, gfLow, gfHigh);
+  return 1 + gfValue * (pamb - 1);
+}
+
 // computeDecompressionSchedule returns an array of rows { depth, mins, gas }
 export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, noGasSwitch, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate, lastStopDepth, descentRate }) {
   const bottomGas = gasLabel === '18/45'
@@ -91,6 +110,9 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
   let totalDecoTime = 0;
   const schedule = [];
   let accumulated = 0;
+  
+  // Track tissue snapshots at key points
+  const tissueSnapshots = [];
 
   // Descent
   const descentTime = depth / descentRate;
@@ -111,6 +133,21 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
     rate: '',
     time: time,
     accumulated: Math.ceil(accumulated)
+  });
+  
+  // Capture tissue state at end of bottom time
+  tissueSnapshots.push({
+    phase: 'Bottom',
+    depth: depth,
+    time: Math.ceil(accumulated),
+    tissues: tissues.map((t, i) => ({
+      n2: t.n2,
+      he: t.he,
+      total: t.n2 + t.he,
+      mValue: calculateMValue(t, depth, first, gfLow, gfHigh, i),
+      compartment: i + 1,
+      label: TISSUE_LABELS[i]
+    }))
   });
 
   // Track current depth - we're at bottom depth initially
@@ -172,6 +209,21 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
         rate: '',
         time: mins,
         accumulated: Math.ceil(accumulated)
+      });
+      
+      // Capture tissue state at this stop
+      tissueSnapshots.push({
+        phase: `Stop @ ${d}m`,
+        depth: d,
+        time: Math.ceil(accumulated),
+        tissues: tissues.map((t, i) => ({
+          n2: t.n2,
+          he: t.he,
+          total: t.n2 + t.he,
+          mValue: calculateMValue(t, d, first, gfLow, gfHigh, i),
+          compartment: i + 1,
+          label: TISSUE_LABELS[i]
+        }))
       });
       
       previousStopDepth = d;
@@ -273,5 +325,20 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
     }));
   }
 
-  return { rows, totalRuntime: Math.ceil(totalRuntime), totalDecoTime, schedule };
+  // Capture final tissue state at surface
+  tissueSnapshots.push({
+    phase: 'Surface',
+    depth: 0,
+    time: Math.ceil(accumulated),
+    tissues: tissues.map((t, i) => ({
+      n2: t.n2,
+      he: t.he,
+      total: t.n2 + t.he,
+      mValue: calculateMValue(t, 0, first, gfLow, gfHigh, i),
+      compartment: i + 1,
+      label: TISSUE_LABELS[i]
+    }))
+  });
+  
+  return { rows, totalRuntime: Math.ceil(totalRuntime), totalDecoTime, schedule, tissueSnapshots };
 }

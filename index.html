@@ -166,6 +166,17 @@
       </div>
     </div>
     
+    <!-- Tissue Compartment Visualization (Collapsible) -->
+    <div class="graph-section collapsed">
+      <div class="graph-header">
+        <span class="toggle-arrow">▼</span>
+        <h4>🧬 Tissue Compartment Analysis</h4>
+      </div>
+      <div class="graph-container">
+        <div id="tissueVisualization" class="tissue-visualization"></div>
+      </div>
+    </div>
+    
     <p class="small">⚠️ Educational use only. Not for real dive planning.</p>
   </div>
 </div>
@@ -215,6 +226,53 @@
     <input id="descentRate" type="number" min="1" max="50" step="1" value="20">
   </div>
 </div>
+
+<!-- Tissue Compartment Information Section -->
+<section id="tissueSection" class="tissue-section" style="display: none;">
+  <h2 class="section-title">🧬 Tissue Compartment Information</h2>
+  
+  <p class="tissue-intro">
+    The Bühlmann ZH-L16C model uses 16 theoretical tissue compartments with different nitrogen and helium uptake/release rates. 
+    Each compartment represents tissue types ranging from fast (blood, brain) to slow (bone, cartilage).
+  </p>
+  
+  <!-- Phase selector for tissue snapshots -->
+  <div class="phase-selector">
+    <label for="tissuePhaseSelect">View tissue loading at:</label>
+    <select id="tissuePhaseSelect">
+      <option value="0">Bottom Time</option>
+    </select>
+  </div>
+  
+  <!-- Tissue Bar Graph -->
+  <div class="graph-section">
+    <div class="graph-header">
+      <h3>📊 Tissue Loading Bar Graph</h3>
+      <span class="toggle-arrow">▼</span>
+    </div>
+    <div class="graph-container">
+      <svg id="tissueBarChart" width="100%" height="800"></svg>
+    </div>
+  </div>
+  
+  <!-- Tissue Loading Over Time (Future) -->
+  <div class="graph-section collapsed">
+    <div class="graph-header">
+      <h3>📈 Tissue Loading Timeline</h3>
+      <span class="toggle-arrow">▼</span>
+    </div>
+    <div class="graph-container">
+      <div class="placeholder-content">
+        <p>Coming soon: Interactive timeline showing tissue saturation changes throughout the entire dive profile.</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="tissue-disclaimer">
+    ⚠️ <strong>Educational Use Only:</strong> This visualization is for educational purposes. 
+    Always use certified dive computers and follow proper decompression procedures.
+  </div>
+</section>
 
 <script type="module" src="src/main.js"></script>
 
