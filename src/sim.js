@@ -74,6 +74,23 @@ function calculateMValue(tissue, depth, first, gfLow, gfHigh, compIndex) {
   return 1 + gfValue * (pamb - 1);
 }
 
+// Capture tissue state snapshot for timeline visualization
+function captureTimelineSnapshot(tissues, time, depth, phase, first, gfLow, gfHigh) {
+  return {
+    time,
+    depth,
+    phase,
+    tissues: tissues.map((t, i) => ({
+      n2: t.n2,
+      he: t.he,
+      total: t.n2 + t.he,
+      mValue: calculateMValue(t, depth, first, gfLow, gfHigh, i),
+      compartment: i + 1,
+      label: TISSUE_LABELS[i]
+    }))
+  };
+}
+
 // computeDecompressionSchedule returns an array of rows { depth, mins, gas }
 export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfHigh, noGasSwitch, decoGasType, decoO2, customType, customO2, customTrimixO2, customHe, useO2Shallow, ascentMode, ascentRate, deepAscentRate, shallowThreshold, shallowAscentRate, lastStopDepth, descentRate }) {
   const bottomGas = gasLabel === '18/45'
@@ -113,10 +130,28 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
   
   // Track tissue snapshots at key points
   const tissueSnapshots = [];
+  
+  // Track tissue timeline snapshots (every ~1 minute throughout the dive)
+  const tissueTimeline = [];
 
   // Descent
   const descentTime = depth / descentRate;
   accumulated += descentTime;
+  
+  // Capture tissue snapshots during descent (every 1m depth or less)
+  for (let d = 0; d <= depth; d += Math.max(1, Math.ceil(depth / 10))) {
+    const t = d / descentRate;
+    let descentTissues = initTissues();
+    const fn2 = 1 - bottomGas.o2 - bottomGas.he;
+    for (let i = 0; i < t; i++) {
+      descentTissues = descentTissues.map((ti, j) => ({
+        n2: update(ti.n2, inspired(d, fn2), ZHL16C[j].tN2, 1),
+        he: update(ti.he, inspired(d, bottomGas.he), ZHL16C[j].tHe, 1)
+      }));
+    }
+    tissueTimeline.push(captureTimelineSnapshot(descentTissues, Math.ceil(t), d, 'Descent', first, gfLow, gfHigh));
+  }
+  
   schedule.push({
     phase: 'Descent',
     depth: `0-${depth}m`,
@@ -127,6 +162,16 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
 
   // Bottom
   accumulated += time;
+  
+  // Capture tissue snapshots during bottom time (every minute)
+  for (let t = 0; t <= time; t += 1) {
+    const snapshotTissues = tissues.map((ti, i) => ({
+      n2: update(ti.n2, inspired(depth, 1 - bottomGas.o2 - bottomGas.he), ZHL16C[i].tN2, t),
+      he: update(ti.he, inspired(depth, bottomGas.he), ZHL16C[i].tHe, t)
+    }));
+    tissueTimeline.push(captureTimelineSnapshot(snapshotTissues, Math.ceil(descentTime + t), depth, 'Bottom', first, gfLow, gfHigh));
+  }
+  
   schedule.push({
     phase: 'Bottom',
     depth: `${depth}m`,
@@ -188,6 +233,17 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
         const ascentTime = (previousStopDepth - d) / rate;
         totalRuntime += ascentTime;
         accumulated += ascentTime;
+        
+        // Capture tissue snapshots during ascent
+        for (let t = 0; t <= ascentTime; t += 0.5) {
+          const ascentDepth = previousStopDepth - (rate * t);
+          const ascentTissues = tissues.map((ti, i) => ({
+            n2: update(ti.n2, inspired(ascentDepth, fn2), ZHL16C[i].tN2, 0.5),
+            he: update(ti.he, inspired(ascentDepth, fhe), ZHL16C[i].tHe, 0.5)
+          }));
+          tissueTimeline.push(captureTimelineSnapshot(ascentTissues, Math.ceil(accumulated - ascentTime + t), Math.round(ascentDepth), 'Ascent', first, gfLow, gfHigh));
+        }
+        
         schedule.push({
           phase: 'Ascent',
           depth: `${previousStopDepth}-${d}m`,
@@ -201,8 +257,17 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
         }));
       }
       
-      // Add the stop
+      // Add the stop with timeline snapshots
       accumulated += mins;
+      
+      // Capture tissue snapshots during stop (every minute if stop is long)
+      for (let t = 0; t <= mins; t += 1) {
+        const stopTissues = tissues.map((ti, i) => ({
+          n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, t),
+          he: update(ti.he, inspired(d, fhe), ZHL16C[i].tHe, t)
+        }));
+        tissueTimeline.push(captureTimelineSnapshot(stopTissues, Math.ceil(accumulated - mins + t), d, 'Stop', first, gfLow, gfHigh));
+      }
       schedule.push({
         phase: 'Stop',
         depth: `${d}m`,
@@ -355,5 +420,8 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
     }))
   });
   
-  return { rows, totalRuntime: Math.ceil(totalRuntime), totalDecoTime, schedule, tissueSnapshots };
+  // Add final surface snapshot to timeline
+  tissueTimeline.push(captureTimelineSnapshot(tissues, Math.ceil(accumulated), 0, 'Surface', first, gfLow, gfHigh));
+  
+  return { rows, totalRuntime: Math.ceil(totalRuntime), totalDecoTime, schedule, tissueSnapshots, tissueTimeline };
 }

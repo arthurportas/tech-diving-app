@@ -38,6 +38,8 @@ document.querySelectorAll('.graph-header').forEach(header => {
           createDiveProfileGraph(lastResult, selectedStrategies);
         } else if (svg && svg.id === 'fullDiveProfileChart') {
           createFullDiveProfileGraph(lastResult);
+        } else if (svg && svg.id === 'timelineSaturationChart') {
+          createTimelineSaturationGraph(lastResult);
         }
       };
       setTimeout(rerender, 320); // match CSS transition duration
@@ -830,6 +832,228 @@ function renderStrategyCards(result) {
   });
 }
 
+// Create interactive tissue saturation heatmap
+function createTimelineSaturationGraph(result) {
+  const { tissueTimeline } = result;
+  if (!tissueTimeline || tissueTimeline.length === 0) return;
+
+  const svgElement = document.getElementById('timelineSaturationChart');
+  if (!svgElement) return;
+
+  const margin = { top: 30, right: 20, bottom: 50, left: 120 };
+  const width = svgElement.clientWidth - margin.left - margin.right;
+  const height = svgElement.clientHeight - margin.top - margin.bottom;
+
+  // Clear previous chart
+  d3.select(svgElement).selectAll("*").remove();
+
+  const svg = d3.select(svgElement)
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom)
+    .append('g')
+    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+  // Sample timeline at regular intervals (every 1 minute max)
+  const maxSamples = 100;
+  const sampleStep = Math.ceil(tissueTimeline.length / maxSamples);
+  const sampledTimeline = [];
+  for (let i = 0; i < tissueTimeline.length; i += sampleStep) {
+    sampledTimeline.push(tissueTimeline[i]);
+  }
+  if (sampledTimeline[sampledTimeline.length - 1] !== tissueTimeline[tissueTimeline.length - 1]) {
+    sampledTimeline.push(tissueTimeline[tissueTimeline.length - 1]);
+  }
+
+  // Scales
+  const xScale = d3.scaleBand()
+    .domain(sampledTimeline.map((d, i) => i))
+    .range([0, width])
+    .padding(0.02);
+
+  const yScale = d3.scaleBand()
+    .domain(TISSUE_LABELS.map((_, i) => i))
+    .range([0, height])
+    .padding(0.05);
+
+  // Color scale for saturation (0 = green, 0.5 = orange, 1 = red)
+  const colorScale = d3.scaleLinear()
+    .domain([0, 0.5, 1])
+    .range(['#10b981', '#f59e0b', '#ef4444'])
+    .clamp(true);
+
+  // Draw Y-axis labels (compartment numbers)
+  svg.selectAll('.y-label')
+    .data(TISSUE_LABELS)
+    .enter()
+    .append('text')
+    .attr('class', 'y-label')
+    .attr('x', -10)
+    .attr('y', (d, i) => yScale(i) + yScale.bandwidth() / 2)
+    .attr('text-anchor', 'end')
+    .attr('dominant-baseline', 'middle')
+    .attr('font-size', '0.7rem')
+    .attr('fill', 'var(--text-secondary)')
+    .text((d, i) => `${i + 1}`);
+
+  // Draw heatmap cells
+  const cellWidth = xScale.bandwidth();
+  const cellHeight = yScale.bandwidth();
+
+  svg.selectAll('.heatmap-cell')
+    .data(sampledTimeline.flatMap((timeSnapshot, tIdx) =>
+      timeSnapshot.tissues.map((tissue, cIdx) => ({
+        tIdx, cIdx, tissue, timeSnapshot
+      }))
+    ))
+    .enter()
+    .append('rect')
+    .attr('class', 'heatmap-cell')
+    .attr('x', d => xScale(d.tIdx))
+    .attr('y', d => yScale(d.cIdx))
+    .attr('width', cellWidth)
+    .attr('height', cellHeight)
+    .attr('fill', d => {
+      const saturation = Math.min(d.tissue.total / d.tissue.mValue, 1);
+      return colorScale(saturation);
+    })
+    .attr('stroke', 'var(--bg-darker)')
+    .attr('stroke-width', 0.5)
+    .on('mouseover', function(event, d) {
+      showHeatmapTooltip(event, d);
+      d3.select(this).attr('stroke-width', 1.5).attr('stroke', 'var(--accent-cyan)');
+    })
+    .on('mouseout', function(event, d) {
+      hideTooltip();
+      d3.select(this).attr('stroke-width', 0.5).attr('stroke', 'var(--bg-darker)');
+    });
+
+  // Draw X-axis with time labels (every 10th sample)
+  const xAxisScale = d3.scaleLinear()
+    .domain([0, sampledTimeline.length - 1])
+    .range([0, width]);
+
+  const xAxisTicks = [];
+  for (let i = 0; i < sampledTimeline.length; i += Math.max(1, Math.floor(sampledTimeline.length / 10))) {
+    xAxisTicks.push(i);
+  }
+  if (!xAxisTicks.includes(sampledTimeline.length - 1)) {
+    xAxisTicks.push(sampledTimeline.length - 1);
+  }
+
+  svg.selectAll('.x-label')
+    .data(xAxisTicks)
+    .enter()
+    .append('text')
+    .attr('class', 'x-label')
+    .attr('x', i => xAxisScale(i))
+    .attr('y', height + 15)
+    .attr('text-anchor', 'middle')
+    .attr('font-size', '0.75rem')
+    .attr('fill', 'var(--text-secondary)')
+    .text(i => `${sampledTimeline[i].time}m`);
+
+  // X-axis label
+  svg.append('text')
+    .attr('class', 'd3-axis-label')
+    .attr('x', width / 2)
+    .attr('y', height + 40)
+    .style('text-anchor', 'middle')
+    .text('Dive Time (min)');
+
+  // Y-axis label
+  svg.append('text')
+    .attr('class', 'd3-axis-label')
+    .attr('transform', 'rotate(-90)')
+    .attr('x', 0 - height / 2)
+    .attr('y', 0 - margin.left + 20)
+    .style('text-anchor', 'middle')
+    .text('Tissue Compartment');
+
+  // Legend
+  const legendX = width - 150;
+  const legendY = -20;
+  svg.append('text')
+    .attr('x', legendX)
+    .attr('y', legendY)
+    .attr('font-size', '0.8rem')
+    .attr('font-weight', '600')
+    .attr('fill', 'var(--text-secondary)')
+    .text('Saturation:');
+
+  const legendStops = [
+    { label: '0%', color: '#10b981' },
+    { label: '50%', color: '#f59e0b' },
+    { label: '100%', color: '#ef4444' }
+  ];
+
+  legendStops.forEach((stop, i) => {
+    const x = legendX + 10;
+    const y = legendY + 15 + i * 15;
+    svg.append('rect')
+      .attr('x', x)
+      .attr('y', y - 5)
+      .attr('width', 12)
+      .attr('height', 12)
+      .attr('fill', stop.color);
+    svg.append('text')
+      .attr('x', x + 18)
+      .attr('y', y + 2)
+      .attr('font-size', '0.75rem')
+      .attr('fill', 'var(--text-secondary)')
+      .text(stop.label);
+  });
+}
+
+function showHeatmapTooltip(event, d) {
+  let tooltip = document.querySelector('.d3-tooltip');
+  if (!tooltip) {
+    tooltip = document.createElement('div');
+    tooltip.className = 'd3-tooltip';
+    document.body.appendChild(tooltip);
+    currentTooltip = tooltip;
+  }
+
+  const saturation = (d.tissue.total / d.tissue.mValue) * 100;
+  const content = `
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Compartment:</span>
+      <span>${d.tissue.compartment} (${d.tissue.label})</span>
+    </div>
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Time:</span>
+      <span>${d.timeSnapshot.time} min</span>
+    </div>
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Depth:</span>
+      <span>${d.timeSnapshot.depth} m</span>
+    </div>
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Phase:</span>
+      <span>${d.timeSnapshot.phase}</span>
+    </div>
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">N₂ / He:</span>
+      <span>${d.tissue.n2.toFixed(3)} / ${d.tissue.he.toFixed(3)} bar</span>
+    </div>
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">M-Value:</span>
+      <span>${d.tissue.mValue.toFixed(3)} bar</span>
+    </div>
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Saturation:</span>
+      <span>${saturation.toFixed(1)}%</span>
+    </div>
+  `;
+
+  tooltip.innerHTML = content;
+  tooltip.classList.add('active');
+
+  const x = event.pageX + 10;
+  const y = event.pageY - 30;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+
 // Render tissue compartment visualization
 function renderRows(result) {
   const { rows, totalRuntime, totalDecoTime, schedule, tissueSnapshots } = result;
@@ -864,6 +1088,9 @@ function renderRows(result) {
   
   // Render tissue compartment visualization
   renderTissueVisualization(result);
+
+  // Create tissue saturation timeline
+  createTimelineSaturationGraph(result);
 
   // Display detailed schedule
   const scheduleDiv = document.getElementById('detailedSchedule');

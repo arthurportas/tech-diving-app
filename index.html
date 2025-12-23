@@ -176,6 +176,18 @@
         <div id="tissueVisualization" class="tissue-visualization"></div>
       </div>
     </div>
+
+    <!-- Tissue Saturation Timeline (Collapsible) -->
+    <div class="graph-section collapsed">
+      <div class="graph-header">
+        <span class="toggle-arrow">▼</span>
+        <h4>📺 Tissue Saturation Timeline</h4>
+      </div>
+      <div class="graph-container">
+        <p class="small" style="margin-bottom: 1rem; color: var(--text-secondary);">Interactive heatmap showing all 16 tissue compartments (rows) across dive time (columns). Color intensity represents saturation relative to M-values. Hover for details.</p>
+        <svg id="timelineSaturationChart" style="width: 100%; height: 700px;"></svg>
+      </div>
+    </div>
     
     <p class="small">⚠️ Educational use only. Not for real dive planning.</p>
   </div>
