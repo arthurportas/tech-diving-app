@@ -28,8 +28,8 @@ const multiAscent = document.getElementById('multiAscent');
 
 function updateDecoUI() {
   const type = decoGasTypeSelect.value;
-  eanO2Container.style.display = type === 'o2' ? 'none' : 'block';
-  o2ShallowContainer.style.display = type === 'o2' ? 'none' : 'block';
+  eanO2Container.style.display = (type === 'o2' || type === 'same') ? 'none' : 'block';
+  o2ShallowContainer.style.display = (type === 'o2' || type === 'same') ? 'none' : 'block';
   document.getElementById('useO2Shallow').checked = type === 'ean+o2';
 }
 

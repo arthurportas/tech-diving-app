@@ -73,6 +73,9 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
 
   let tissues = initTissues();
 
+  // Determine deco gas to use
+  const decoGas = decoGasType === 'same' ? bottomGas : null;
+
   for (let t=0; t<time; t++) {
     const fn2 = 1 - bottomGas.o2 - bottomGas.he;
     tissues = tissues.map((ti,i)=>({
@@ -114,23 +117,31 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
   
   for (let d = first; d > lastStopDepth; d -= 3) {
     let mins = 0;
-    let fn2;
-    if (decoGasType === 'o2') {
+    let fn2, fhe;
+    if (decoGasType === 'same') {
+      fn2 = 1 - decoGas.o2 - decoGas.he;
+      fhe = decoGas.he;
+    } else if (decoGasType === 'o2') {
       fn2 = 0;
+      fhe = 0;
     } else {
       fn2 = (useO2Shallow && d <= 6) ? 0 : (100 - decoO2) / 100;
+      fhe = 0;
     }
     while (ceilingDepth(tissues, d, first, gfLow, gfHigh) > d - 0.1) {
       tissues = tissues.map((ti,i)=>({
         n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, 1),
-        he: update(ti.he, 0, ZHL16C[i].tHe, 1)
+        he: update(ti.he, inspired(d, fhe), ZHL16C[i].tHe, 1)
       }));
       mins++;
       // safety cap to avoid infinite loops
       if (mins > 1000) break;
     }
     if (mins > 0) {
-      rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
+      const gasLabel = decoGasType === 'same'
+        ? (decoGas.he > 0 ? `Trimix ${Math.round(decoGas.o2*100)}/${Math.round(decoGas.he*100)}` : (decoGas.o2 === 0.21 ? 'Air' : `EAN ${Math.round(decoGas.o2*100)}`))
+        : (fn2 === 0 ? 'O₂' : `EAN ${decoO2}`);
+      rows.push({ depth: d, mins, gas: gasLabel });
       totalDecoTime += mins;
       
       // Add ascent from previous stop/position to this stop
@@ -172,7 +183,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
         const ascentTime = 3 / rate; // 3m depth change
         tissues = tissues.map((ti,i)=>({
           n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, ascentTime),
-          he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
+          he: update(ti.he, inspired(d, fhe), ZHL16C[i].tHe, ascentTime)
         }));
         // Don't add to schedule - this is just passing through
         // Don't update previousStopDepth - we're still ascending from same position
@@ -184,22 +195,28 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
   if (lastStopDepth > 0) {
     let d = lastStopDepth;
     let mins = 0;
-    let fn2;
-    if (decoGasType === 'o2') {
+    let fn2, fhe;
+    if (decoGasType === 'same') {
+      fn2 = 1 - decoGas.o2 - decoGas.he;
+      fhe = decoGas.he;
+    } else if (decoGasType === 'o2') {
       fn2 = 0;
+      fhe = 0;
     } else {
       fn2 = (useO2Shallow && d <= 6) ? 0 : (100 - decoO2) / 100;
+      fhe = 0;
     }
     while (ceilingDepth(tissues, d, first, gfLow, gfHigh) > d - 0.1) {
       tissues = tissues.map((ti,i)=>({
         n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, 1),
-        he: update(ti.he, 0, ZHL16C[i].tHe, 1)
+        he: update(ti.he, inspired(d, fhe), ZHL16C[i].tHe, 1)
       }));
       mins++;
       if (mins > 1000) break;
     }
     if (mins > 0) {
-      rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
+      const gasLabel = decoGasType === 'same'
+        ? (decoGas.he > 0 ? `Trimix ${Math.round(decoGas.o2*100)}/${Math.round(decoGas.he*100)}` : (decoGas.o2 === 0.21 ? 'Air' : `EAN ${Math.round(decoGas.o2*100)}`))\n        : (fn2 === 0 ? 'O₂' : `EAN ${decoO2}`);\n      rows.push({ depth: d, mins, gas: gasLabel });
       totalDecoTime += mins;
       
       // Add ascent from previous stop to this stop
@@ -217,7 +234,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
         });
         tissues = tissues.map((ti,i)=>({
           n2: update(ti.n2, inspired(previousStopDepth, fn2), ZHL16C[i].tN2, ascentTime),
-          he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
+          he: update(ti.he, inspired(previousStopDepth, fhe), ZHL16C[i].tHe, ascentTime)
         }));
       }
       
@@ -249,7 +266,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
     });
     tissues = tissues.map((ti,i)=>({
       n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, ascentTime),
-      he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
+      he: update(ti.he, inspired(d, fhe), ZHL16C[i].tHe, ascentTime)
     }));
   }
 
