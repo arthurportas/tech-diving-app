@@ -75,11 +75,7 @@ function calculateMValue(tissue, depth, first, gfLow, gfHigh, compIndex) {
 }
 
 // Capture tissue state snapshot for timeline visualization
-function captureTimelineSnapshot(tissues, time, depth, phase, gfLow, gfHigh) {
-  // For timeline, use the current depth as reference (not a fixed ceiling depth)
-  // This gives more accurate saturation readings during descent/ascent
-  const depthRef = Math.max(depth, 0);
-  
+function captureTimelineSnapshot(tissues, time, depth, phase) {
   return {
     time,
     depth,
@@ -88,25 +84,33 @@ function captureTimelineSnapshot(tissues, time, depth, phase, gfLow, gfHigh) {
       n2: t.n2,
       he: t.he,
       total: t.n2 + t.he,
-      // Calculate M-value at current depth with conservative GF
-      mValue: calculateMValueAtDepth(t, depthRef, gfLow, gfHigh, i),
+      // M-value at this depth without GF correction (raw tissue limit)
+      mValue: calculateBasicMValue(t, depth, i),
       compartment: i + 1,
       label: TISSUE_LABELS[i]
     }))
   };
 }
 
-// Calculate M-value at a specific depth (used for timeline visualization)
-function calculateMValueAtDepth(tissue, depth, gfLow, gfHigh, compIndex) {
+// Calculate raw M-value at a depth (no GF; just tissue tolerance)
+function calculateBasicMValue(tissue, depth, compIndex) {
   const c = ZHL16C[compIndex];
   const pt = tissue.n2 + tissue.he;
   if (pt === 0) return 0;
+  
+  // Weighted average a and b coefficients
   const a = (c.aN2 * tissue.n2 + c.aHe * tissue.he) / pt;
   const b = (c.bN2 * tissue.n2 + c.bHe * tissue.he) / pt;
-  const pamb = (pt - a) / b;
-  // Use current depth for GF interpolation (conservative during descent)
-  const gfValue = gf(depth, depth, gfLow, gfHigh);
-  return 1 + gfValue * (pamb - 1);
+  
+  // Ambient pressure at depth
+  const ambientPressure = 1 + depth / 10;
+  
+  // M-value is the maximum tolerated ambient pressure
+  // Rearranged from: ambientPressure = a + b * inertPressure
+  // So: maxInertPressure = (ambientPressure - a) / b
+  // And M-value = ambientPressure at max inert pressure
+  // For display: just return the inert pressure limit directly
+  return (ambientPressure - a) / b;
 }
 
 // computeDecompressionSchedule returns an array of rows { depth, mins, gas }
@@ -167,7 +171,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
         he: update(ti.he, inspired(d, bottomGas.he), ZHL16C[j].tHe, 1)
       }));
     }
-    tissueTimeline.push(captureTimelineSnapshot(descentTissues, Math.ceil(t), d, 'Descent', gfLow, gfHigh));
+    tissueTimeline.push(captureTimelineSnapshot(descentTissues, Math.ceil(t), d, 'Descent'));
   }
   
   schedule.push({
@@ -187,7 +191,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
       n2: update(ti.n2, inspired(depth, 1 - bottomGas.o2 - bottomGas.he), ZHL16C[i].tN2, t),
       he: update(ti.he, inspired(depth, bottomGas.he), ZHL16C[i].tHe, t)
     }));
-    tissueTimeline.push(captureTimelineSnapshot(snapshotTissues, Math.ceil(descentTime + t), depth, 'Bottom', gfLow, gfHigh));
+    tissueTimeline.push(captureTimelineSnapshot(snapshotTissues, Math.ceil(descentTime + t), depth, 'Bottom'));
   }
   
   schedule.push({
@@ -259,7 +263,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
             n2: update(ti.n2, inspired(ascentDepth, fn2), ZHL16C[i].tN2, 0.5),
             he: update(ti.he, inspired(ascentDepth, fhe), ZHL16C[i].tHe, 0.5)
           }));
-          tissueTimeline.push(captureTimelineSnapshot(ascentTissues, Math.ceil(accumulated - ascentTime + t), Math.round(ascentDepth), 'Ascent', gfLow, gfHigh));
+          tissueTimeline.push(captureTimelineSnapshot(ascentTissues, Math.ceil(accumulated - ascentTime + t), Math.round(ascentDepth), 'Ascent'));
         }
         
         schedule.push({
@@ -284,7 +288,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
           n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, t),
           he: update(ti.he, inspired(d, fhe), ZHL16C[i].tHe, t)
         }));
-        tissueTimeline.push(captureTimelineSnapshot(stopTissues, Math.ceil(accumulated - mins + t), d, 'Stop', gfLow, gfHigh));
+        tissueTimeline.push(captureTimelineSnapshot(stopTissues, Math.ceil(accumulated - mins + t), d, 'Stop'));
       }
       schedule.push({
         phase: 'Stop',
@@ -439,7 +443,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
   });
   
   // Add final surface snapshot to timeline
-  tissueTimeline.push(captureTimelineSnapshot(tissues, Math.ceil(accumulated), 0, 'Surface', gfLow, gfHigh));
+  tissueTimeline.push(captureTimelineSnapshot(tissues, Math.ceil(accumulated), 0, 'Surface'));
   
   return { rows, totalRuntime: Math.ceil(totalRuntime), totalDecoTime, schedule, tissueSnapshots, tissueTimeline };
 }
