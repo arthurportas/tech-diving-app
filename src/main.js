@@ -432,6 +432,8 @@ const o2ShallowContainer = document.getElementById('o2ShallowContainer');
 const ascentModeSelect = document.getElementById('ascentMode');
 const singleAscent = document.getElementById('singleAscent');
 const multiAscent = document.getElementById('multiAscent');
+const unitsSelect = document.getElementById('units');
+let lastUnits = unitsSelect ? unitsSelect.value : 'metric';
 
 function updateDecoUI() {
   const noSwitch = document.getElementById('noGasSwitch').checked;
@@ -479,7 +481,7 @@ function updateAscentUI() {
 ascentModeSelect.addEventListener('change', updateAscentUI);
 
 function updateUnits() {
-  const units = document.getElementById('units').value;
+  const units = unitsSelect.value;
   const isImperial = units === 'imperial';
 
   // Update main labels
@@ -499,22 +501,27 @@ function updateUnits() {
   document.getElementById('lastStopDepthLabel').textContent = `Last Stop Depth (${isImperial ? 'ft' : 'm'})`;
   document.getElementById('descentRateLabel').textContent = `Descent Rate (${isImperial ? 'ft' : 'm'}/min)`;
 
-  // Convert input values
-  if (isImperial) {
-    depthInput.value = Math.round(mToFt(depthInput.value));
-    document.getElementById('ascentRate').value = Math.round(mToFt(document.getElementById('ascentRate').value));
-    document.getElementById('deepAscentRate').value = Math.round(mToFt(document.getElementById('deepAscentRate').value));
-    document.getElementById('shallowThreshold').value = Math.round(mToFt(document.getElementById('shallowThreshold').value));
-    document.getElementById('shallowAscentRate').value = Math.round(mToFt(document.getElementById('shallowAscentRate').value));
-    document.getElementById('descentRate').value = Math.round(mToFt(document.getElementById('descentRate').value));
-  } else {
-    depthInput.value = Math.round(ftToM(depthInput.value));
-    document.getElementById('ascentRate').value = Math.round(ftToM(document.getElementById('ascentRate').value));
-    document.getElementById('deepAscentRate').value = Math.round(ftToM(document.getElementById('deepAscentRate').value));
-    document.getElementById('shallowThreshold').value = Math.round(ftToM(document.getElementById('shallowThreshold').value));
-    document.getElementById('shallowAscentRate').value = Math.round(ftToM(document.getElementById('shallowAscentRate').value));
-    document.getElementById('descentRate').value = Math.round(ftToM(document.getElementById('descentRate').value));
+  // Convert input values ONLY when units changed
+  if (units !== lastUnits) {
+    if (isImperial) {
+      depthInput.value = Math.round(mToFt(depthInput.value));
+      document.getElementById('ascentRate').value = Math.round(mToFt(document.getElementById('ascentRate').value));
+      document.getElementById('deepAscentRate').value = Math.round(mToFt(document.getElementById('deepAscentRate').value));
+      document.getElementById('shallowThreshold').value = Math.round(mToFt(document.getElementById('shallowThreshold').value));
+      document.getElementById('shallowAscentRate').value = Math.round(mToFt(document.getElementById('shallowAscentRate').value));
+      document.getElementById('descentRate').value = Math.round(mToFt(document.getElementById('descentRate').value));
+    } else {
+      depthInput.value = Math.round(ftToM(depthInput.value));
+      document.getElementById('ascentRate').value = Math.round(ftToM(document.getElementById('ascentRate').value));
+      document.getElementById('deepAscentRate').value = Math.round(ftToM(document.getElementById('deepAscentRate').value));
+      document.getElementById('shallowThreshold').value = Math.round(ftToM(document.getElementById('shallowThreshold').value));
+      document.getElementById('shallowAscentRate').value = Math.round(ftToM(document.getElementById('shallowAscentRate').value));
+      document.getElementById('descentRate').value = Math.round(ftToM(document.getElementById('descentRate').value));
+    }
   }
+
+  // Remember current units
+  lastUnits = units;
 }
 
 document.getElementById('units').addEventListener('change', () => {
