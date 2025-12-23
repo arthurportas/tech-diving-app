@@ -76,41 +76,28 @@ function calculateMValue(tissue, depth, first, gfLow, gfHigh, compIndex) {
 
 // Capture tissue state snapshot for timeline visualization
 function captureTimelineSnapshot(tissues, time, depth, phase) {
+  const ambientN2 = inspired(depth, 0.79);  // N₂ fraction at depth (79% on air, but respects mix)
+  const ambientHe = 0;  // No helium in ambient
+  
   return {
     time,
     depth,
     phase,
+    ambientN2,
+    ambientHe,
     tissues: tissues.map((t, i) => ({
       n2: t.n2,
       he: t.he,
       total: t.n2 + t.he,
-      // M-value at this depth without GF correction (raw tissue limit)
-      mValue: calculateBasicMValue(t, depth, i),
+      // Supersaturation: how much above ambient (positive = loaded, negative = can offgas)
+      // This shows true tissue loading relative to current environment
+      n2_supersaturation: t.n2 - ambientN2,
+      he_supersaturation: t.he - ambientHe,
+      total_supersaturation: (t.n2 - ambientN2) + (t.he - ambientHe),
       compartment: i + 1,
       label: TISSUE_LABELS[i]
     }))
   };
-}
-
-// Calculate raw M-value at a depth (no GF; just tissue tolerance)
-function calculateBasicMValue(tissue, depth, compIndex) {
-  const c = ZHL16C[compIndex];
-  const pt = tissue.n2 + tissue.he;
-  if (pt === 0) return 0;
-  
-  // Weighted average a and b coefficients
-  const a = (c.aN2 * tissue.n2 + c.aHe * tissue.he) / pt;
-  const b = (c.bN2 * tissue.n2 + c.bHe * tissue.he) / pt;
-  
-  // Ambient pressure at depth
-  const ambientPressure = 1 + depth / 10;
-  
-  // M-value is the maximum tolerated ambient pressure
-  // Rearranged from: ambientPressure = a + b * inertPressure
-  // So: maxInertPressure = (ambientPressure - a) / b
-  // And M-value = ambientPressure at max inert pressure
-  // For display: just return the inert pressure limit directly
-  return (ambientPressure - a) / b;
 }
 
 // computeDecompressionSchedule returns an array of rows { depth, mins, gas }

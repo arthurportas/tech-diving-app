@@ -875,10 +875,11 @@ function createTimelineSaturationGraph(result) {
     .range([0, height])
     .padding(0.05);
 
-  // Color scale for saturation (0 = green, 0.5 = orange, 1 = red)
+  // Color scale: supersaturation from -0.3 (can offgas) to +0.3 (loaded)
+  // Green = can offgas, Red = heavily loaded
   const colorScale = d3.scaleLinear()
-    .domain([0, 0.5, 1])
-    .range(['#10b981', '#f59e0b', '#ef4444'])
+    .domain([-0.3, 0, 0.3])
+    .range(['#10b981', '#94a3b8', '#ef4444'])
     .clamp(true);
 
   // Draw Y-axis labels (compartment names + numbers)
@@ -913,8 +914,8 @@ function createTimelineSaturationGraph(result) {
     .attr('width', cellWidth)
     .attr('height', cellHeight)
     .attr('fill', d => {
-      const saturation = Math.min(d.tissue.total / d.tissue.mValue, 1);
-      return colorScale(saturation);
+      const supersaturation = d.tissue.total_supersaturation;
+      return colorScale(supersaturation);
     })
     .attr('stroke', 'var(--bg-darker)')
     .attr('stroke-width', 0.5)
@@ -970,7 +971,7 @@ function createTimelineSaturationGraph(result) {
     .text('Tissue Compartment');
 
   // Legend
-  const legendX = width - 150;
+  const legendX = width - 180;
   const legendY = -20;
   svg.append('text')
     .attr('x', legendX)
@@ -978,12 +979,12 @@ function createTimelineSaturationGraph(result) {
     .attr('font-size', '0.8rem')
     .attr('font-weight', '600')
     .attr('fill', 'var(--text-secondary)')
-    .text('Saturation:');
+    .text('Supersaturation:');
 
   const legendStops = [
-    { label: '0%', color: '#10b981' },
-    { label: '50%', color: '#f59e0b' },
-    { label: '100%', color: '#ef4444' }
+    { label: 'Can offgas', color: '#10b981' },
+    { label: 'Equilibrium', color: '#94a3b8' },
+    { label: 'Loaded', color: '#ef4444' }
   ];
 
   legendStops.forEach((stop, i) => {
@@ -998,7 +999,7 @@ function createTimelineSaturationGraph(result) {
     svg.append('text')
       .attr('x', x + 18)
       .attr('y', y + 2)
-      .attr('font-size', '0.75rem')
+      .attr('font-size', '0.7rem')
       .attr('fill', 'var(--text-secondary)')
       .text(stop.label);
   });
@@ -1013,7 +1014,7 @@ function showHeatmapTooltip(event, d) {
     currentTooltip = tooltip;
   }
 
-  const saturation = (d.tissue.total / d.tissue.mValue) * 100;
+  const supersaturation = d.tissue.total_supersaturation;
   const content = `
     <div class="d3-tooltip-row">
       <span class="d3-tooltip-label">Compartment:</span>
@@ -1032,16 +1033,22 @@ function showHeatmapTooltip(event, d) {
       <span>${d.timeSnapshot.phase}</span>
     </div>
     <div class="d3-tooltip-row">
-      <span class="d3-tooltip-label">N₂ / He:</span>
-      <span>${d.tissue.n2.toFixed(3)} / ${d.tissue.he.toFixed(3)} bar</span>
+      <span class="d3-tooltip-label">Tissue N₂:</span>
+      <span>${d.tissue.n2.toFixed(3)} bar</span>
     </div>
     <div class="d3-tooltip-row">
-      <span class="d3-tooltip-label">M-Value:</span>
-      <span>${d.tissue.mValue.toFixed(3)} bar</span>
+      <span class="d3-tooltip-label">Tissue He:</span>
+      <span>${d.tissue.he.toFixed(3)} bar</span>
     </div>
     <div class="d3-tooltip-row">
-      <span class="d3-tooltip-label">Saturation:</span>
-      <span>${saturation.toFixed(1)}%</span>
+      <span class="d3-tooltip-label">Ambient N₂:</span>
+      <span>${d.timeSnapshot.ambientN2.toFixed(3)} bar</span>
+    </div>
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Supersaturation:</span>
+      <span style="color: ${supersaturation > 0.1 ? '#ef4444' : supersaturation > 0 ? '#f59e0b' : '#10b981'}">
+        ${supersaturation > 0 ? '+' : ''}${supersaturation.toFixed(3)} bar
+      </span>
     </div>
   `;
 
