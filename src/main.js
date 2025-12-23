@@ -621,6 +621,11 @@ function renderRows(result) {
 }
 
 btn.addEventListener('click', () => {
+  // Auto-expand graph sections before rendering so SVGs size correctly
+  document.querySelectorAll('.graph-section').forEach(section => {
+    section.classList.remove('collapsed');
+  });
+
   const depth = Number(depthInput.value) || 0;
   const time = Number(timeInput.value) || 0;
   const gasLabel = gasSelect.value;
