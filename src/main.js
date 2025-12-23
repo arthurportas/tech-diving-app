@@ -27,7 +27,15 @@ document.querySelectorAll('.graph-header').forEach(header => {
       const svg = graphSection.querySelector('svg');
       const rerender = () => {
         if (svg && svg.id === 'diveProfileChart') {
-          createDiveProfileGraph(lastResult);
+          const selectedStrategies = [
+            { id: 'compareLinear', label: 'Linear', key: 'linear' },
+            { id: 'compareSCurve', label: 'S-curve', key: 's-curve' },
+            { id: 'compareExponential', label: 'Exponential', key: 'exponential' }
+          ].filter(x => {
+            const el = document.getElementById(x.id);
+            return el && el.checked;
+          });
+          createDiveProfileGraph(lastResult, selectedStrategies);
         } else if (svg && svg.id === 'fullDiveProfileChart') {
           createFullDiveProfileGraph(lastResult);
         }
