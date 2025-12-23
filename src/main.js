@@ -1,5 +1,8 @@
 import { computeDecompressionSchedule } from './sim.js';
 
+// Keep last computed result to allow graph re-render on expand
+let lastResult = null;
+
 const M_TO_FT = 3.28084;
 
 function mToFt(m) { return m * M_TO_FT; }
@@ -18,6 +21,19 @@ document.querySelectorAll('.graph-header').forEach(header => {
   header.addEventListener('click', function() {
     const graphSection = this.closest('.graph-section');
     toggleGraph(graphSection);
+    // If expanding, re-render the appropriate graph after transition so widths are correct
+    const isExpanding = !graphSection.classList.contains('collapsed');
+    if (isExpanding && lastResult) {
+      const svg = graphSection.querySelector('svg');
+      const rerender = () => {
+        if (svg && svg.id === 'diveProfileChart') {
+          createDiveProfileGraph(lastResult);
+        } else if (svg && svg.id === 'fullDiveProfileChart') {
+          createFullDiveProfileGraph(lastResult);
+        }
+      };
+      setTimeout(rerender, 320); // match CSS transition duration
+    }
   });
 });
 
@@ -539,6 +555,8 @@ diveInputs.forEach(id => {
 
 function renderRows(result) {
   const { rows, totalRuntime, totalDecoTime, schedule } = result;
+  // cache for later re-render on expand
+  lastResult = result;
   const units = document.getElementById('units').value;
   const isImperial = units === 'imperial';
 
