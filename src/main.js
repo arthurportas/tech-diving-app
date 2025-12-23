@@ -641,7 +641,10 @@ diveInputs.forEach(id => {
 
         // Re-render cards and graph with current selection
         renderStrategyCards(lastResult);
-        createDiveProfileGraph(lastResult, selectedStrategies);
+        // Delay graph redraw to allow CSS expand transition to complete
+        setTimeout(() => {
+          createDiveProfileGraph(lastResult, selectedStrategies);
+        }, 320);
       } else {
         // Fallback: trigger full recalculation if no cached result yet
         triggerRecalculation();
