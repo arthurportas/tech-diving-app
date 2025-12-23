@@ -840,7 +840,7 @@ function createTimelineSaturationGraph(result) {
   const svgElement = document.getElementById('timelineSaturationChart');
   if (!svgElement) return;
 
-  const margin = { top: 30, right: 20, bottom: 50, left: 120 };
+  const margin = { top: 30, right: 20, bottom: 50, left: 160 };
   const width = svgElement.clientWidth - margin.left - margin.right;
   const height = svgElement.clientHeight - margin.top - margin.bottom;
 
@@ -881,7 +881,7 @@ function createTimelineSaturationGraph(result) {
     .range(['#10b981', '#f59e0b', '#ef4444'])
     .clamp(true);
 
-  // Draw Y-axis labels (compartment numbers)
+  // Draw Y-axis labels (compartment names + numbers)
   svg.selectAll('.y-label')
     .data(TISSUE_LABELS)
     .enter()
@@ -891,9 +891,9 @@ function createTimelineSaturationGraph(result) {
     .attr('y', (d, i) => yScale(i) + yScale.bandwidth() / 2)
     .attr('text-anchor', 'end')
     .attr('dominant-baseline', 'middle')
-    .attr('font-size', '0.7rem')
+    .attr('font-size', '0.65rem')
     .attr('fill', 'var(--text-secondary)')
-    .text((d, i) => `${i + 1}`);
+    .text((d, i) => `${i + 1}. ${d.substring(0, 12)}`);  // Show number + first 12 chars of tissue name
 
   // Draw heatmap cells
   const cellWidth = xScale.bandwidth();
