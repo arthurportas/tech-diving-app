@@ -79,11 +79,11 @@ function createDiveProfileGraph(result) {
   
   // Scales
   const xScale = d3.scaleLinear()
-    .domain([time, d3.max(data, d => d.time)])
+    .domain([0, d3.max(data, d => d.time)])
     .range([0, width]);
   
   const yScale = d3.scaleLinear()
-    .domain([depth, 0]) // Depth to surface (0)
+    .domain([0, depth]) // Surface (0) to max depth
     .range([0, height]);
   
   // Axes
