@@ -577,6 +577,30 @@ tbody tr:hover {
   margin-right: 0.5rem;
 }
 
+/* Strategy Cards */
+.strategy-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.strategy-card {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-light) 100%);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: var(--shadow-md);
+}
+
+.strategy-card h4 {
+  margin: 0 0 0.75rem 0;
+}
+
+.strategy-card table {
+  font-size: 0.9rem;
+}
+
 /* Gas Type Badges */
 select[id="gas"] {
   background-image: linear-gradient(var(--bg-dark), var(--bg-dark)),

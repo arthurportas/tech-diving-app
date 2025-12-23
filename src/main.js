@@ -560,6 +560,85 @@ diveInputs.forEach(id => {
   }
 });
 
+// Strategy toggles auto-recalculate
+['compareLinear','compareSCurve','compareExponential'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', triggerRecalculation);
+});
+
+// Redistribute stop minutes across strategies while preserving totalDecoTime
+function redistributeStops(rows, totalDecoTime, strategy) {
+  if (!rows || rows.length === 0) return [];
+  // Deep to shallow order as given
+  const n = rows.length;
+  // Positions 0..n-1 where i=0 deepest, i=n-1 shallowest
+  const weights = rows.map((r, i) => {
+    const x = i / (n - 1 || 1);
+    switch (strategy) {
+      case 'linear':
+        // Favor shallow stops linearly
+        return 1 + x;
+      case 's-curve': {
+        // Logistic S around mid, steeper curve with k
+        const k = 6;
+        const s = 1 / (1 + Math.exp(-k * (x - 0.5)));
+        return 0.5 + s; // keep positive bias
+      }
+      case 'exponential':
+        // Heavily favor shallow stops
+        return Math.exp(2 * x);
+      default:
+        return 1; // uniform
+    }
+  });
+  const sumW = weights.reduce((a, b) => a + b, 0);
+  // Raw minutes per stop
+  const raw = rows.map((r, i) => (weights[i] / sumW) * totalDecoTime);
+  // Round and fix remainder
+  const rounded = raw.map(v => Math.floor(v));
+  let remainder = totalDecoTime - rounded.reduce((a, b) => a + b, 0);
+  // Distribute remaining minutes to stops with largest fractional parts (bias shallow first)
+  const order = raw
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => (b.frac - a.frac) || (a.i - b.i));
+  for (let k = 0; k < order.length && remainder > 0; k++) {
+    rounded[order[k].i]++;
+    remainder--;
+  }
+  // Build redistributed rows
+  return rows.map((r, i) => ({ depth: r.depth, mins: rounded[i], gas: r.gas }));
+}
+
+function renderStrategyCards(result) {
+  const container = document.getElementById('strategyCards');
+  if (!container) return;
+  const { rows, totalDecoTime } = result;
+  const selected = [
+    { id: 'compareLinear', label: 'Linear', key: 'linear' },
+    { id: 'compareSCurve', label: 'S-curve', key: 's-curve' },
+    { id: 'compareExponential', label: 'Exponential', key: 'exponential' }
+  ].filter(x => {
+    const el = document.getElementById(x.id);
+    return el && el.checked;
+  });
+  container.innerHTML = '';
+  if (selected.length === 0) return;
+  const units = document.getElementById('units').value;
+  const isImperial = units === 'imperial';
+  selected.forEach(s => {
+    const altRows = redistributeStops(rows, totalDecoTime, s.key);
+    const total = altRows.reduce((a, r) => a + r.mins, 0);
+    let html = `<div class="strategy-card"><h4>${s.label} Strategy</h4>`;
+    html += '<table><thead><tr><th>Depth</th><th>Time (min)</th><th>Gas</th></tr></thead><tbody>';
+    altRows.forEach(r => {
+      const depth = isImperial ? Math.round(mToFt(r.depth)) : r.depth;
+      html += `<tr><td>${depth}${isImperial ? 'ft' : ''}</td><td>${r.mins}</td><td>${r.gas}</td></tr>`;
+    });
+    html += `</tbody></table><div class="small">Total decompression time: ${total} min</div></div>`;
+    container.innerHTML += html;
+  });
+}
+
 function renderRows(result) {
   const { rows, totalRuntime, totalDecoTime, schedule } = result;
   // cache for later re-render on expand
@@ -579,6 +658,9 @@ function renderRows(result) {
   
   // Create full dive schedule profile graph
   createFullDiveProfileGraph(result);
+
+  // Render strategy comparison cards
+  renderStrategyCards(result);
 
   // Display detailed schedule
   const scheduleDiv = document.getElementById('detailedSchedule');
