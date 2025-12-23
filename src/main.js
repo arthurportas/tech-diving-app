@@ -151,9 +151,9 @@ function createDiveProfileGraph(result) {
     .attr('class', 'd3-profile-line')
     .attr('d', line);
   
-  // Add feather lines from stops to surface
+  // Add feather lines from key points (stops, descent end, bottom end) to surface
   data.forEach(d => {
-    if (d.phase === 'stop' && d.depth > 0) {
+    if ((d.phase === 'stop' || d.phase === 'descent' || d.phase === 'bottom') && d.depth > 0) {
       svg.append('line')
         .attr('class', 'd3-feather-line')
         .attr('x1', xScale(d.time))
@@ -163,9 +163,9 @@ function createDiveProfileGraph(result) {
     }
   });
   
-  // Add stop points
+  // Add points for stops and key events
   svg.selectAll('.d3-stop-point')
-    .data(data.filter(d => d.phase === 'stop'))
+    .data(data.filter(d => d.phase === 'stop' || d.phase === 'descent' || d.phase === 'bottom'))
     .enter()
     .append('circle')
     .attr('class', 'd3-stop-point')
@@ -352,7 +352,19 @@ function showTooltip(event, d) {
     currentTooltip = tooltip;
   }
   
+  const phaseLabel = d.phase === 'stop'
+    ? 'Deco Stop'
+    : d.phase === 'descent'
+    ? 'Max Depth Reached'
+    : d.phase === 'bottom'
+    ? 'Ascent Start'
+    : d.phase;
+
   const content = `
+    <div class="d3-tooltip-row">
+      <span class="d3-tooltip-label">Type:</span>
+      <span>${phaseLabel}</span>
+    </div>
     <div class="d3-tooltip-row">
       <span class="d3-tooltip-label">Depth:</span>
       <span>${d.depth}m</span>
