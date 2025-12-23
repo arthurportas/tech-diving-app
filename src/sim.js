@@ -133,7 +133,7 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
       rows.push({ depth: d, mins, gas: fn2 === 0 ? 'O₂' : `EAN ${decoO2}` });
       totalDecoTime += mins;
       
-      // Add ascent from previous stop to this stop
+      // Add ascent from previous stop/position to this stop
       if (previousStopDepth !== d) {
         const rate = ascentMode === 'single' ? ascentRate : (previousStopDepth > shallowThreshold ? deepAscentRate : shallowAscentRate);
         const ascentTime = (previousStopDepth - d) / rate;
@@ -163,8 +163,21 @@ export function computeDecompressionSchedule({ depth, time, gasLabel, gfLow, gfH
       });
       
       previousStopDepth = d;
+      totalRuntime += mins;
+    } else {
+      // No stop needed at this depth - ascend through it
+      // Update tissues for ascending from previousStopDepth through this depth
+      if (previousStopDepth > d) {
+        const rate = ascentMode === 'single' ? ascentRate : (previousStopDepth > shallowThreshold ? deepAscentRate : shallowAscentRate);
+        const ascentTime = 3 / rate; // 3m depth change
+        tissues = tissues.map((ti,i)=>({
+          n2: update(ti.n2, inspired(d, fn2), ZHL16C[i].tN2, ascentTime),
+          he: update(ti.he, 0, ZHL16C[i].tHe, ascentTime)
+        }));
+        // Don't add to schedule - this is just passing through
+        // Don't update previousStopDepth - we're still ascending from same position
+      }
     }
-    totalRuntime += mins;
   }
 
   // Last stop at lastStopDepth
