@@ -601,6 +601,20 @@ tbody tr:hover {
   font-size: 0.9rem;
 }
 
+.diff-increase {
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+.diff-decrease {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.diff-neutral {
+  color: var(--text-secondary);
+}
+
 /* Gas Type Badges */
 select[id="gas"] {
   background-image: linear-gradient(var(--bg-dark), var(--bg-dark)),

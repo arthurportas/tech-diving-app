@@ -629,10 +629,15 @@ function renderStrategyCards(result) {
     const altRows = redistributeStops(rows, totalDecoTime, s.key);
     const total = altRows.reduce((a, r) => a + r.mins, 0);
     let html = `<div class="strategy-card"><h4>${s.label} Strategy</h4>`;
-    html += '<table><thead><tr><th>Depth</th><th>Time (min)</th><th>Gas</th></tr></thead><tbody>';
-    altRows.forEach(r => {
+    html += '<table><thead><tr><th>Depth</th><th>Time (min)</th><th>Δ</th><th>Gas</th></tr></thead><tbody>';
+    altRows.forEach((r, i) => {
       const depth = isImperial ? Math.round(mToFt(r.depth)) : r.depth;
-      html += `<tr><td>${depth}${isImperial ? 'ft' : ''}</td><td>${r.mins}</td><td>${r.gas}</td></tr>`;
+      const baseline = rows[i] ? rows[i].mins : 0;
+      const diff = r.mins - baseline;
+      const diffClass = diff > 0 ? 'diff-increase' : diff < 0 ? 'diff-decrease' : 'diff-neutral';
+      const diffSign = diff > 0 ? '+' : '';
+      const diffText = diff !== 0 ? `${diffSign}${diff}` : '—';
+      html += `<tr><td>${depth}${isImperial ? 'ft' : ''}</td><td>${r.mins}</td><td class="${diffClass}">${diffText}</td><td>${r.gas}</td></tr>`;
     });
     html += `</tbody></table><div class="small">Total decompression time: ${total} min</div></div>`;
     container.innerHTML += html;
